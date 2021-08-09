@@ -1,6 +1,7 @@
 const maxApi = require('max-api')
 const monomeGrid = require('monome-grid')
 const noteValues = require('./configurations/noteValues')
+const views = require('./views')
 const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
 const { MonoTrack, MappedTrack } = require('./models/track')
@@ -50,7 +51,10 @@ const main = async() => {
             maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
           }
         } else if (y === 1) {
-          if (x === 7 && currentTrack.isMaster !== 1) {
+          //view selector
+          if (x < 7) {
+            
+          } else if (x === 7 && currentTrack.isMaster !== 1) {
             syncing = true
             syncTrack = currentTrack
             let flicker = 0

@@ -32,7 +32,7 @@ const buildPitchRows = (currentTrack) => {
     for (let y = 0; y < 8; y++) {
       let row = []
       for (let x = 0; x < currentTrack.sequence.length; x++) {
-        if (currentTrack.sequence[x].pitch === currentTrack.mapping[y]) {
+        if (currentTrack.sequence[x].pitches[y] === currentTrack.mapping[y]) {
           row[x] = 1
         } else {
           row[x] = 0
