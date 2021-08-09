@@ -2,97 +2,88 @@ const maxApi = require('max-api')
 const monomeGrid = require('monome-grid')
 const noteValues = require('./configurations/noteValues')
 const create2DArray = require('./utils/create2DArray')
-//const handleInput = require('./utils/handleInput')
-const Track = require('./models/track')
+const insertCol = require('./utils/insertCol')
+const { MonoTrack, MappedTrack } = require('./models/track')
+const { buildRow, buildPitchRows } = require('./utils/buildRow')
+const buildColumn = require('./utils/buildColumn')
+const er1Mapping = require('./configurations/er1PitchMapping')
 
 const tracks = [
-  new Track(0, 3),
-  new Track(1, 5)
+  new MappedTrack(0, 3, er1Mapping),
+  new MonoTrack(1, 5)
 ]
-
-tracks[0].sequence = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
-tracks[1].sequence = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
-
-let currentTrack = tracks[0]
-
-const buildRow = (rowIdx, currentTrack) => {
-  if (rowIdx === 0) {
-    return buildTopRow(currentTrack)
-  }
-}
-
-const buildTopRow = currentTrack => {
-  let row = []
-  for (let x = 0; x < 16; x++) {
-    if (x === currentTrack.track) {
-      row[x] = 1
-    } else if (x === currentTrack.noteValue + 5) {
-      row[x] = 1
-    } else if (x === currentTrack.page + 11) {
-      row[x] = 1
-    } else {
-      row[x] = 0
-    }
-  }
-
-  return row
-}
 
 const main = async() => {
   let grid = await monomeGrid(); // optionally pass in grid identifier
   
   let led = [];
+  let masterTrack
+  let syncing = false
+  let syncTrack
+  let currentTrack
 
   const initialize = async() => {
-    led = []// initialize 2-dimensional led array
-    for (let y=0;y<16;y++) {
-      led[y] = [];
-      for (let x=0;x<16;x++)
-        led[y][x] = 0;
-    };
+    led = create2DArray(16, 16)
+    masterTrack = tracks[0]
+    masterTrack.isMaster = 1
+    currentTrack = tracks[0]
 
-    // update grid
-    grid.refresh(led);
+    led[0] = buildRow(0, currentTrack)
+    grid.refresh(led)
   }
   
   async function run() {
-    // initialize 2-dimensional led array
-    for (let y=0;y<16;y++) {
-      led[y] = [];
-      for (let x=0;x<16;x++)
-        led[y][x] = 0;
-    }
-
-    // refresh leds with a pattern
-    // let refresh = function() {
-    //   led[0][0] = 15;
-    //   led[2][0] = 5;
-    //   led[0][2] = 5;
-    //   grid.refresh(led);
-    // }
-
-    // call refresh() function 60 times per second
-    //setInterval(refresh, 1000 / 60);
-
-    // set up key handler
-    grid.key((x, y, s) => console.log(`key received: ${x}, ${y}, ${s}`));
     grid.key((x, y, s) => {
       if (s === 1) {
         if (y === 0) {
           if (x < 6 && x !== currentTrack.track) {
             currentTrack = tracks[x]
-            topRow = buildRow(0, currentTrack)
-            led[0] = topRow
+            led[y] = buildRow(y, currentTrack)
+            let pitchRows = buildPitchRows(currentTrack)
+            led.splice(8, 8, ...pitchRows)
             grid.refresh(led)
             maxApi.outlet('changeTrack', x)
           } else if (x > 5 && x < 12) {
             currentTrack.noteValue = x - 5
-            topRow = buildRow(0, currentTrack)
-            led[0] = topRow
+            led[y] = buildRow(y, currentTrack)
             grid.refresh(led)
-            maxApi.post(noteValues[currentTrack.noteValue])
             maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
           }
+        } else if (y === 1) {
+          if (x === 7 && currentTrack.isMaster !== 1) {
+            syncing = true
+            syncTrack = currentTrack
+            let flicker = 0
+            const timer = setInterval(() => {
+              if (syncing) {
+                led[1][7] = flicker ? 0 : 1
+                flicker = !flicker
+                grid.refresh(led)
+              } else {
+                clearInterval(timer)
+              }
+            }, 1000 / 10)
+          }
+        } else if (y === 7) {
+          currentTrack.sequence[x].on = !currentTrack.sequence[x].on
+          led[y] = buildRow(y, currentTrack)
+          grid.refresh(led)
+        } else if (y > 7) {
+          //pitch input
+          if (currentTrack.poly === true) {
+            if (currentTrack.mapping) {
+              if (currentTrack.sequence[x].pitches.includes(currentTrack.mapping[15 - y])) {
+                currentTrack.sequence[x].pitches[15 - y] = null
+                const col = buildColumn(x, currentTrack)
+                led = insertCol(led, col, x)
+              } else {
+                currentTrack.sequence[x].pitches[15 - y] = currentTrack.mapping[15 - y]
+                const col = buildColumn(x, currentTrack)
+                led = insertCol(led, col, x)
+              }
+            }
+          }
+          grid.refresh(led)
         }
       }
     });
@@ -101,8 +92,26 @@ const main = async() => {
   maxApi.addHandler('tick', (track) => {
     let t = tracks[track]
     let step = t.step
-    if (t.sequence[step] === 1) {
-      maxApi.outlet('note', track)
+    //connect the sync function to incoming ticks
+    if (syncing === true && t.isMaster === 1 && step === 0) {
+      syncTrack.step = 0
+      syncing = false
+      syncTrack = null
+      led[1][7] = 0
+    }
+    if (t.sequence[step].on) {
+      if (t.sequence[step].pitches) {
+        const pitches = t.sequence[step].pitches
+        let notes = [] 
+        for (let i = 0; i < pitches.length; i++) {
+          if (pitches[i]) {
+            notes.push(pitches[i])
+          }
+        }
+        maxApi.outlet('notes', track, notes)
+      } else {
+        maxApi.outlet('note', track, t.sequence[step].pitch)
+      }
     }
     t.incrementStep()
   })
@@ -110,21 +119,20 @@ const main = async() => {
   maxApi.addHandler('playhead', (track) => {
     let step = currentTrack.step
     let topRow = buildRow(0, currentTrack)
+    
     for (let x = 0; x < 16; x++) {
-      if (x === step) {
+      if (step === x) {
         for (let y = 8; y < 16; y++) {
           led[y][x] = 1
         }
       } else {
-        for (let y = 8; y < 16; y++) {
-          led[y][x] = 0
-        } 
+        const col = buildColumn(x, currentTrack)
+        led = insertCol(led, col, x)
       }
     }
+
     led[0] = topRow
     grid.refresh(led)
-
-    maxApi.outlet(step)
   })
 
   maxApi.addHandler('changeTrack', (track) => {

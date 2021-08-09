@@ -127,8 +127,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 50.0, 100.0, 114.0, 22.0 ],
-					"text" : "rate~ 1. @sync lock"
+					"patching_rect" : [ 50.0, 100.0, 86.0, 22.0 ],
+					"text" : "rate~ @sync 1"
 				}
 
 			}
