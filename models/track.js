@@ -1,7 +1,7 @@
 const { Step, PolyStep } = require('./step')
 
 class Track {
-  constructor(track, noteValue) {
+  constructor(track, noteValue, instrumentConfig) {
     this.track = track,
     this.noteValue = noteValue
     this.page = 0
@@ -9,7 +9,10 @@ class Track {
     this.upperLimit = 15
     this.sequence = new Array(this.upperLimit + 1)
     this.isMaster = 0
+    //specifies which view a track has currently selected(pitch, velocity, pitchProb, prob, anything)
     this.view = 0
+    this.numPages = 1
+    this.instrumentConfig = instrumentConfig
 
     for (let x = 0; x < this.sequence.length; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, 0)
@@ -26,15 +29,15 @@ class Track {
 }
 
 class PolyTrack extends Track {
-  constructor(track, noteValue) {
-    super(track, noteValue)
+  constructor(track, noteValue, instrumentConfig) {
+    super(track, noteValue, instrumentConfig)
     this.poly = true
   }
 }
 
 class MonoTrack extends Track {
-  constructor(track, noteValue) {
-    super(track, noteValue)
+  constructor(track, noteValue, instrumentConfig) {
+    super(track, noteValue, instrumentConfig)
     this.poly = false
   }
 }
@@ -42,12 +45,11 @@ class MonoTrack extends Track {
 //a track for an instrument that has an arbitrary pitch-mapping
 //e.g. a drum machine whose pads are mapped to arbitrary pitches
 class MappedTrack extends PolyTrack {
-  constructor(track, noteValue, mapping) {
-    super(track, noteValue)
-    this.mapping = mapping
+  constructor(track, noteValue, instrumentConfig) {
+    super(track, noteValue, instrumentConfig)
 
     for (let x = 0; x < this.sequence.length; x++) {
-      this.sequence[x] = new PolyStep(false, new Array(this.mapping.length), 0, 0, 0, 0, 0)
+      this.sequence[x] = new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, 0)
     }
   }
   

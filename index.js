@@ -1,17 +1,17 @@
 const maxApi = require('max-api')
 const monomeGrid = require('monome-grid')
 const noteValues = require('./configurations/noteValues')
-const views = require('./views')
+const views = require('./configurations/views')
 const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
 const { MonoTrack, MappedTrack } = require('./models/track')
-const { buildRow, buildPitchRows } = require('./utils/buildRow')
+const { buildRow, buildViewRows } = require('./utils/buildRow')
 const buildColumn = require('./utils/buildColumn')
-const er1Mapping = require('./configurations/er1PitchMapping')
+const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 
 const tracks = [
-  new MappedTrack(0, 3, er1Mapping),
-  new MonoTrack(1, 5)
+  new MappedTrack(0, 4, er1 ),
+  new MonoTrack(1, 4)
 ]
 
 const main = async() => {
@@ -30,6 +30,7 @@ const main = async() => {
     currentTrack = tracks[0]
 
     led[0] = buildRow(0, currentTrack)
+    led[1] = buildRow(1, currentTrack)
     grid.refresh(led)
   }
   
@@ -37,14 +38,18 @@ const main = async() => {
     grid.key((x, y, s) => {
       if (s === 1) {
         if (y === 0) {
+          //switch track
           if (x < 6 && x !== currentTrack.track) {
             currentTrack = tracks[x]
             led[y] = buildRow(y, currentTrack)
-            let pitchRows = buildPitchRows(currentTrack)
-            led.splice(8, 8, ...pitchRows)
+            led[1] = buildRow(1, currentTrack)
+            const viewRows = buildViewRows(currentTrack)
+            led.splice(8, 8, ...viewRows)
             grid.refresh(led)
             maxApi.outlet('changeTrack', x)
-          } else if (x > 5 && x < 12) {
+          } 
+          //switch note value
+          else if (x > 5 && x < 12) {
             currentTrack.noteValue = x - 5
             led[y] = buildRow(y, currentTrack)
             grid.refresh(led)
@@ -52,8 +57,12 @@ const main = async() => {
           }
         } else if (y === 1) {
           //view selector
-          if (x < 7) {
-            
+          if (x < 5) {
+            currentTrack.view = x
+            led[y] = buildRow(y, currentTrack)
+            const viewRows = buildViewRows(currentTrack)
+            led.splice(8, 8, ...viewRows)
+            grid.refresh(led)   
           } else if (x === 7 && currentTrack.isMaster !== 1) {
             syncing = true
             syncTrack = currentTrack
@@ -72,28 +81,51 @@ const main = async() => {
           currentTrack.sequence[x].on = !currentTrack.sequence[x].on
           led[y] = buildRow(y, currentTrack)
           grid.refresh(led)
-        } else if (y > 7) {
+        } 
+        //view input (pitch, vel, prob, pitchProb, or unknown)
+        else if (y > 7) {
           //pitch input
-          if (currentTrack.poly === true) {
-            if (currentTrack.mapping) {
-              if (currentTrack.sequence[x].pitches.includes(currentTrack.mapping[15 - y])) {
-                currentTrack.sequence[x].pitches[15 - y] = null
-                const col = buildColumn(x, currentTrack)
-                led = insertCol(led, col, x)
-              } else {
-                currentTrack.sequence[x].pitches[15 - y] = currentTrack.mapping[15 - y]
-                const col = buildColumn(x, currentTrack)
-                led = insertCol(led, col, x)
+          if (currentTrack.view === 0) {
+            if (!currentTrack.sequence[x].pitch || !currentTrack.sequence[x].pitches) {
+              currentTrack.sequence[x].on = true
+              led[7] = buildRow(7, currentTrack)
+            }
+            if (currentTrack.poly === true) {
+              if (currentTrack.instrumentConfig.mapping) {
+                //turn note off if it's already selected
+                if (currentTrack.sequence[x].pitches.includes(currentTrack.instrumentConfig.mapping[15 - y])) {
+                  currentTrack.sequence[x].pitches[15 - y] = null
+                  const col = buildColumn(x, currentTrack)
+                  led = insertCol(led, col, x)
+                } 
+                //turn note on
+                else {
+                  currentTrack.sequence[x].pitches[15 - y] = currentTrack.instrumentConfig.mapping[15 - y]
+                  const col = buildColumn(x, currentTrack)
+                  led = insertCol(led, col, x)
+                }
               }
             }
+            grid.refresh(led)
           }
-          grid.refresh(led)
+          //octave input
+          else if (currentTrack.view === 1) {
+            //check if selection is within instrument's octaveSpan
+            if ((15 - y) < currentTrack.instrumentConfig.octaveSpan) {
+              currentTrack.sequence[x].octave = 15 - y
+              const col = buildColumn(x, currentTrack)
+              led = insertCol(led, col, x)
+            }
+
+            grid.refresh(led)
+          }
         }
       }
     });
   }
 
   maxApi.addHandler('tick', (track) => {
+    maxApi.post('ticked')
     let t = tracks[track]
     let step = t.step
     //connect the sync function to incoming ticks
@@ -105,6 +137,7 @@ const main = async() => {
     }
     if (t.sequence[step].on) {
       if (t.sequence[step].pitches) {
+        
         const pitches = t.sequence[step].pitches
         let notes = [] 
         for (let i = 0; i < pitches.length; i++) {
@@ -157,6 +190,7 @@ const main = async() => {
     //implement a mode to make this optional
     for (let i = 0; i < tracks.length; i++) {
       tracks[i].step = 0;
+      maxApi.post('zeroed')
     }
   })
 
