@@ -11,10 +11,13 @@ const buildColumn = (x, currentTrack) => {
 
 const buildPitchColumn = (x, currentTrack) => {
   let column = new Array(8).fill(0)
+
+  const start = currentTrack.sequence[x].octave * 8
+  console.log(start)
   if (currentTrack.instrumentConfig.mapping) {
-    for (let y = 0; y < 8; y++) {
+    for (let y = start; y < start + 8; y++) {
       if (currentTrack.sequence[x].pitches[y]) {
-        column[column.length - (y + 1)] = 1
+        column[column.length - ((y % 8) + 1)] = 1
       }
     }
   }

@@ -92,15 +92,17 @@ const main = async() => {
             }
             if (currentTrack.poly === true) {
               if (currentTrack.instrumentConfig.mapping) {
+                const noteIdx = (15 - y) + (currentTrack.sequence[x].octave * 8)
+                maxApi.post(noteIdx)
                 //turn note off if it's already selected
-                if (currentTrack.sequence[x].pitches.includes(currentTrack.instrumentConfig.mapping[15 - y])) {
+                if (currentTrack.sequence[x].pitches.includes(currentTrack.instrumentConfig.mapping[noteIdx])) {
                   currentTrack.sequence[x].pitches[15 - y] = null
                   const col = buildColumn(x, currentTrack)
                   led = insertCol(led, col, x)
                 } 
                 //turn note on
                 else {
-                  currentTrack.sequence[x].pitches[15 - y] = currentTrack.instrumentConfig.mapping[15 - y]
+                  currentTrack.sequence[x].pitches[noteIdx] = currentTrack.instrumentConfig.mapping[noteIdx]
                   const col = buildColumn(x, currentTrack)
                   led = insertCol(led, col, x)
                 }
@@ -125,7 +127,6 @@ const main = async() => {
   }
 
   maxApi.addHandler('tick', (track) => {
-    maxApi.post('ticked')
     let t = tracks[track]
     let step = t.step
     //connect the sync function to incoming ticks
@@ -136,8 +137,8 @@ const main = async() => {
       led[1][7] = 0
     }
     if (t.sequence[step].on) {
-      if (t.sequence[step].pitches) {
-        
+      //poly track
+      if (t.poly) {
         const pitches = t.sequence[step].pitches
         let notes = [] 
         for (let i = 0; i < pitches.length; i++) {
@@ -146,7 +147,9 @@ const main = async() => {
           }
         }
         maxApi.outlet('notes', track, notes)
-      } else {
+      } 
+      //mono track
+      else {
         maxApi.outlet('note', track, t.sequence[step].pitch)
       }
     }
@@ -190,7 +193,6 @@ const main = async() => {
     //implement a mode to make this optional
     for (let i = 0; i < tracks.length; i++) {
       tracks[i].step = 0;
-      maxApi.post('zeroed')
     }
   })
 

@@ -27,7 +27,6 @@ const buildSecondRow = currentTrack => {
       row[x] = 0
     }
   }
-  console.log(row)
   return row
 }
 
@@ -97,7 +96,7 @@ const buildOctaveRows = currentTrack => {
     for (let y = 0; y < rows.length; y++) {
       let row = []
       for (let x = 0; x < 16; x++) {
-        if (currentTrack.sequence[x].octave === y) {
+        if (y <= currentTrack.sequence[x].octave) {
           row[x] = 1
         } else {
           row[x] = 0
