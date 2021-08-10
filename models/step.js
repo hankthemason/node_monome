@@ -25,5 +25,6 @@ class PolyStep extends Step {
 
 module.exports = {
   Step,
-  PolyStep
+  PolyStep,
+  MonoStep
 }

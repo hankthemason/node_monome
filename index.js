@@ -4,14 +4,16 @@ const noteValues = require('./configurations/noteValues')
 const views = require('./configurations/views')
 const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
+const getMsPerNote = require('./utils/getMsPerNote')
 const { MonoTrack, MappedTrack } = require('./models/track')
-const { buildRow, buildViewRows } = require('./utils/buildRow')
+const { buildRow, buildAllRows, buildViewRows } = require('./utils/buildRow')
 const buildColumn = require('./utils/buildColumn')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
+const scales = require('./configurations/scales')
 
 const tracks = [
-  new MappedTrack(0, 4, er1 ),
-  new MonoTrack(1, 4)
+  new MappedTrack(0, 4, er1),
+  new MonoTrack(1, 4, sh101)
 ]
 
 const main = async() => {
@@ -22,16 +24,34 @@ const main = async() => {
   let syncing = false
   let syncTrack
   let currentTrack
+  let masterHertz
 
   const initialize = async() => {
     led = create2DArray(16, 16)
     masterTrack = tracks[0]
-    masterTrack.isMaster = 1
+    masterTrack.isMaster = true
     currentTrack = tracks[0]
 
-    led[0] = buildRow(0, currentTrack)
-    led[1] = buildRow(1, currentTrack)
+    led = buildAllRows(led, currentTrack)
     grid.refresh(led)
+
+    //right now, we will set root notes to default middle C
+    //later, make this configurable
+    for (let i = 0; i < tracks.length; i++) {
+      //only for non-mapping tracks
+      if (!tracks[i].mapping) {
+        tracks[i].rootNote = 60
+      }
+    }
+
+    //right now, set scale to minor
+    //later, make this configurable
+    for (let i = 0; i < tracks.length; i++) {
+      //only for non-mapping tracks
+      if (!tracks[i].mapping) {
+        tracks[i].scale = scales[1].scale
+      }
+    }
   }
   
   async function run() {
@@ -41,29 +61,28 @@ const main = async() => {
           //switch track
           if (x < 6 && x !== currentTrack.track) {
             currentTrack = tracks[x]
-            led[y] = buildRow(y, currentTrack)
-            led[1] = buildRow(1, currentTrack)
-            const viewRows = buildViewRows(currentTrack)
-            led.splice(8, 8, ...viewRows)
+            led = buildAllRows(led, currentTrack)
             grid.refresh(led)
             maxApi.outlet('changeTrack', x)
           } 
           //switch note value
           else if (x > 5 && x < 12) {
-            currentTrack.noteValue = x - 5
+            currentTrack.noteValue = x - 6
+            currentTrack.msPerNote = getMsPerNote(masterHertz, currentTrack)
             led[y] = buildRow(y, currentTrack)
             grid.refresh(led)
             maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
           }
-        } else if (y === 1) {
-          //view selector
+        }
+        //view selector / sync to master
+        else if (y === 1) {
           if (x < 5) {
             currentTrack.view = x
             led[y] = buildRow(y, currentTrack)
             const viewRows = buildViewRows(currentTrack)
             led.splice(8, 8, ...viewRows)
             grid.refresh(led)   
-          } else if (x === 7 && currentTrack.isMaster !== 1) {
+          } else if (x === 7 && !currentTrack.isMaster) {
             syncing = true
             syncTrack = currentTrack
             let flicker = 0
@@ -77,8 +96,19 @@ const main = async() => {
               }
             }, 1000 / 10)
           }
-        } else if (y === 7) {
+        }
+        //slide on/off
+        else if (y === 6) {
+          //handleSlide()
+          currentTrack.sequence[x].slide = !currentTrack.sequence[x].slide
+          led[y] = buildRow(y, currentTrack)
+          grid.refresh(led)
+        } 
+        //note on/off
+        else if (y === 7) {
           currentTrack.sequence[x].on = !currentTrack.sequence[x].on
+          const col = buildColumn(x, currentTrack)
+          led = insertCol(led, col, x)
           led[y] = buildRow(y, currentTrack)
           grid.refresh(led)
         } 
@@ -90,13 +120,16 @@ const main = async() => {
               currentTrack.sequence[x].on = true
               led[7] = buildRow(7, currentTrack)
             }
+            //poly
             if (currentTrack.poly === true) {
+              //mapping
               if (currentTrack.instrumentConfig.mapping) {
-                const noteIdx = (15 - y) + (currentTrack.sequence[x].octave * 8)
+                const yOffset = currentTrack.sequence[x].octave * 8 
+                const noteIdx = (15 - y)
                 maxApi.post(noteIdx)
                 //turn note off if it's already selected
                 if (currentTrack.sequence[x].pitches.includes(currentTrack.instrumentConfig.mapping[noteIdx])) {
-                  currentTrack.sequence[x].pitches[15 - y] = null
+                  currentTrack.sequence[x].pitches[15 - y + yOffset] = null
                   const col = buildColumn(x, currentTrack)
                   led = insertCol(led, col, x)
                 } 
@@ -107,18 +140,47 @@ const main = async() => {
                   led = insertCol(led, col, x)
                 }
               }
+            } 
+            //mono
+            else {
+              //first, check the input against the instrument's bounds
+              let note = currentTrack.rootNote + currentTrack.scale[(15 - y) % 7] + (currentTrack.sequence[x].octave * 12)
+              //allow for octaves to be input
+              if (y < 9) {
+                note += 12
+              }
+              
+              if (note >= currentTrack.instrumentConfig.minNote && note <= currentTrack.instrumentConfig.maxNote) {
+                currentTrack.sequence[x].pitch = note
+                const col = buildColumn(x, currentTrack)
+                led = insertCol(led, col, x)
+              }
             }
             grid.refresh(led)
           }
           //octave input
           else if (currentTrack.view === 1) {
-            //check if selection is within instrument's octaveSpan
-            if ((15 - y) < currentTrack.instrumentConfig.octaveSpan) {
-              currentTrack.sequence[x].octave = 15 - y
-              const col = buildColumn(x, currentTrack)
-              led = insertCol(led, col, x)
+            if (!currentTrack.instrumentConfig.mapping) {
+              let thisStep = currentTrack.sequence[x]
+              //this is the real # of possible octaves based on root note
+              const calculatedOctaveSpan = Math.ceil((currentTrack.instrumentConfig.maxNote - currentTrack.rootNote) / 12)
+              if ((15 - y) < calculatedOctaveSpan) {
+                const prevOctave = thisStep.octave 
+                thisStep.octave = 15 - y
+                const diff = Math.abs(prevOctave - thisStep.octave)
+                //octave increases
+                thisStep.octave > prevOctave ? thisStep.pitch += diff * 12 : thisStep.pitch -= diff * 12
+                const col = buildColumn(x, currentTrack)
+                led = insertCol(led, col, x)
+              }
+            } else {
+              //check if selection is within instrument's octaveSpan
+              if ((15 - y) < currentTrack.instrumentConfig.octaveSpan) {
+                currentTrack.sequence[x].octave = 15 - y
+                const col = buildColumn(x, currentTrack)
+                led = insertCol(led, col, x)
+              }
             }
-
             grid.refresh(led)
           }
         }
@@ -130,7 +192,7 @@ const main = async() => {
     let t = tracks[track]
     let step = t.step
     //connect the sync function to incoming ticks
-    if (syncing === true && t.isMaster === 1 && step === 0) {
+    if (syncing === true && t.isMaster && step === 0) {
       syncTrack.step = 0
       syncing = false
       syncTrack = null
@@ -146,11 +208,16 @@ const main = async() => {
             notes.push(pitches[i])
           }
         }
-        maxApi.outlet('notes', track, notes)
+        maxApi.outlet('notes', track, notes, t.msPerNote)
       } 
       //mono track
       else {
-        maxApi.outlet('note', track, t.sequence[step].pitch)
+        maxApi.post(t.sequence[step].slide)
+        if (t.sequence[step].slide) {
+          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote + (t.msPerNote * .1)))
+        } else {
+          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote - (t.msPerNote * .1)))
+        }
       }
     }
     t.incrementStep()
@@ -182,10 +249,18 @@ const main = async() => {
     grid.refresh(led)
   })
 
+  maxApi.addHandler('masterHertz', (hz) => {
+    for (const track of tracks) {
+      track.msPerNote = getMsPerNote(hz, track)
+    }
+  })
+
   maxApi.addHandler('stop', () => {
     for (var y = 8; y < 16; y++) {
       led[y][currentTrack.step - 1] = 0
     }
+
+    led = buildAllRows(led, currentTrack)
 
     grid.refresh(led)
 
