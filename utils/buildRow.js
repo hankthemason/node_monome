@@ -1,3 +1,5 @@
+const calculateLimits = require('./calculateLimits')
+
 //selected track, noteValue, currentPage
 const buildTopRow = currentTrack => {
   let row = []
@@ -32,20 +34,24 @@ const buildSecondRow = currentTrack => {
 
 const buildSlideRow = (currentTrack) => {
   let row = []
+  const [pageStart, pageEnd] = calculateLimits(currentTrack)
+
   const seq = currentTrack.sequence
-  for (let x = 0; x < seq.length; x++) {
-    row[x] = seq[x].slide ? 1 : 0
+  for (let x = pageStart; x < pageEnd; x++) {
+    seq[x].slide ? row.push(1) : row.push(0)
   }
   return row
 }
 
-const build7thRow = (currentTrack) => {
+const buildNoteOnRow = (currentTrack) => {
   let row = []
-  for (let x = 0; x < currentTrack.sequence.length; x++) {
+  const [pageStart, pageEnd] = calculateLimits(currentTrack)
+
+  for (let x = pageStart; x < pageEnd; x++) {
     if (currentTrack.sequence[x].on === true) {
-      row[x] = 1
+      row.push(1)
     } else {
-      row[x] = 0
+      row.push(0)
     }
   }
   return row
@@ -59,7 +65,7 @@ const buildRow = (rowIdx, currentTrack) => {
   } else if (rowIdx === 6) {
     return buildSlideRow(currentTrack)
   } else if (rowIdx === 7) {
-    return build7thRow(currentTrack)
+    return buildNoteOnRow(currentTrack)
   } 
 }
 
@@ -68,13 +74,13 @@ const buildAllRows = (led, currentTrack) => {
   let topRow = buildTopRow(currentTrack)
   let secondRow = buildSecondRow(currentTrack)
   let slideRow = buildSlideRow(currentTrack)
-  let seventhRow = build7thRow(currentTrack)
+  let noteOnRow = buildNoteOnRow(currentTrack)
   let viewRows = buildViewRows(currentTrack)
 
   led[0] = topRow
   led[1] = secondRow
   led[6] = slideRow
-  led[7] = seventhRow
+  led[7] = noteOnRow
   led.splice(8, 8, ...viewRows)
   return led
 }
@@ -92,16 +98,18 @@ const buildViewRows = currentTrack => {
 
 const buildPitchRows = (currentTrack) => {
   let rows = new Array(8)
+  //mapping
+  const [pageStart, pageEnd] = calculateLimits(currentTrack)
+
   if (currentTrack.instrumentConfig.mapping) {
     for (let y = 0; y < 8; y++) {
       let row = []
-      for (let x = 0; x < currentTrack.sequence.length; x++) {
+      for (let x = pageStart; x < pageEnd; x++) {
         let yOffset = currentTrack.sequence[x].octave * 8
-        console.log(yOffset)
         if (currentTrack.instrumentConfig.mapping[y + yOffset] && currentTrack.sequence[x].pitches[y + yOffset] === currentTrack.instrumentConfig.mapping[y + yOffset]) {
-          row[x] = 1
+          row.push(1)
         } else {
-          row[x] = 0
+          row.push(0)
         }
       }
       rows[rows.length - (y + 1)] = row
@@ -110,20 +118,19 @@ const buildPitchRows = (currentTrack) => {
     //build rows from bottom up
     for (let y = 0; y < 8; y++) {
       let row = []
-      for (let x = 0; x < currentTrack.sequence.length; x++) {
+      for (let x = pageStart; x < pageEnd; x++) {
         let noteTranslated
         
         if (currentTrack.sequence[x].pitch) {
           //if the selected note is the highest pitch, e.g. the octave
           const octaveNote = currentTrack.sequence[x].pitch === (((currentTrack.sequence[x].octave + 1) * 12) + currentTrack.rootNote)
-          
           noteTranslated = octaveNote ? 7 : currentTrack.scale.indexOf((currentTrack.sequence[x].pitch - currentTrack.rootNote) % 12) 
         }
 
-        if (noteTranslated && y <= noteTranslated) {
-          row[x] = 1
+        if (noteTranslated >= 0 && y <= noteTranslated) {
+          row.push(1)
         } else {
-          row[x] = 0
+          row.push(0)
         }
       }
       rows[rows.length - (y + 1)] = row
@@ -134,15 +141,18 @@ const buildPitchRows = (currentTrack) => {
 
 const buildOctaveRows = currentTrack => {
   let rows = new Array(8)
+
+  const [pageStart, pageEnd] = calculateLimits(currentTrack)
+
   //octave view for MappedTrack
   if (currentTrack.instrumentConfig.mapping || !currentTrack.poly) {
     for (let y = 0; y < rows.length; y++) {
       let row = []
-      for (let x = 0; x < 16; x++) {
+      for (let x = pageStart; x < pageEnd; x++) {
         if (currentTrack.sequence[x].on && y <= currentTrack.sequence[x].octave) {
-          row[x] = 1
+          row.push(1)
         } else {
-          row[x] = 0
+          row.push(0)
         }
       }
       rows[rows.length - (y + 1)] = row

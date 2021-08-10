@@ -5,11 +5,13 @@ const views = require('./configurations/views')
 const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
 const getMsPerNote = require('./utils/getMsPerNote')
+const calculateLimits = require('./utils/calculateLimits')
 const { MonoTrack, MappedTrack } = require('./models/track')
 const { buildRow, buildAllRows, buildViewRows } = require('./utils/buildRow')
 const buildColumn = require('./utils/buildColumn')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const scales = require('./configurations/scales')
+const { Step, PolyStep, MonoStep } = require('./models/step')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
@@ -56,6 +58,7 @@ const main = async() => {
   
   async function run() {
     grid.key((x, y, s) => {
+      const xTranslated = x + (currentTrack.page * 16)
       if (s === 1) {
         if (y === 0) {
           //switch track
@@ -73,16 +76,27 @@ const main = async() => {
             grid.refresh(led)
             maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
           }
+          //switch current page on view
+          else if (x > 11) {
+            if ((x - 12) < currentTrack.numPages) {
+              currentTrack.page = x - 12
+              led = buildAllRows(led, currentTrack)
+              grid.refresh(led)
+            }
+          }
         }
-        //view selector / sync to master
+        //view selector / sync to master / numPages
         else if (y === 1) {
+          //view selector
           if (x < 5) {
             currentTrack.view = x
             led[y] = buildRow(y, currentTrack)
             const viewRows = buildViewRows(currentTrack)
             led.splice(8, 8, ...viewRows)
             grid.refresh(led)   
-          } else if (x === 7 && !currentTrack.isMaster) {
+          } 
+          //sync to master
+          else if (x === 7 && !currentTrack.isMaster) {
             syncing = true
             syncTrack = currentTrack
             let flicker = 0
@@ -95,64 +109,98 @@ const main = async() => {
                 clearInterval(timer)
               }
             }, 1000 / 10)
+          } 
+          //numPages selector
+          else if (x > 11) {
+            let t = currentTrack
+            const prevNumPages = t.numPages
+            t.numPages = x - 11
+            t.upperLimit = 16 * t.numPages
+
+            const diff = Math.abs(t.numPages - prevNumPages)
+            //numPages increased
+            if (prevNumPages < t.numPages) {
+              for (let x = 0; x < 16 * diff; x++) {
+                //mapping instrument
+                if (t.instrumentConfig.mapping) {
+                  t.sequence.push(new PolyStep(false, new Array(t.instrumentConfig.mapping.length), 0, 0, 0, 0, false))
+                }
+                //mono
+                if (!t.poly) {
+                  t.sequence.push(new MonoStep(false, null, 0, 0, 0, 0, false))
+                }
+              }
+            } 
+            //if numPages decreased, don't do anything: keep the extra sequence parts in memory
+            else if (prevNumPages > t.numPages && t.page >= t.numPages) {
+              if (t.page >= t.numPages) {
+                t.page = t.numPages - 1
+              }
+              t.step = (t.step % 16) + (t.page * 16)
+              led[0] = buildRow(0, currentTrack)
+            }
+
+            led[y] = buildRow(y, currentTrack)
+            grid.refresh(led)
           }
         }
         //slide on/off
         else if (y === 6) {
           //handleSlide()
-          currentTrack.sequence[x].slide = !currentTrack.sequence[x].slide
+          currentTrack.sequence[xTranslated].slide = !currentTrack.sequence[xTranslated].slide
           led[y] = buildRow(y, currentTrack)
           grid.refresh(led)
         } 
         //note on/off
         else if (y === 7) {
-          currentTrack.sequence[x].on = !currentTrack.sequence[x].on
-          const col = buildColumn(x, currentTrack)
+          currentTrack.sequence[xTranslated].on = !currentTrack.sequence[xTranslated].on
+          const col = buildColumn(xTranslated, currentTrack)
           led = insertCol(led, col, x)
           led[y] = buildRow(y, currentTrack)
           grid.refresh(led)
         } 
         //view input (pitch, vel, prob, pitchProb, or unknown)
         else if (y > 7) {
+          
           //pitch input
           if (currentTrack.view === 0) {
+            //turn note on
             if (!currentTrack.sequence[x].pitch || !currentTrack.sequence[x].pitches) {
-              currentTrack.sequence[x].on = true
+              currentTrack.sequence[xTranslated].on = true
+              maxApi.post(buildRow(7, currentTrack))
               led[7] = buildRow(7, currentTrack)
             }
             //poly
             if (currentTrack.poly === true) {
               //mapping
               if (currentTrack.instrumentConfig.mapping) {
-                const yOffset = currentTrack.sequence[x].octave * 8 
+                const yOffset = currentTrack.sequence[xTranslated].octave * 8 
                 const noteIdx = (15 - y)
-                maxApi.post(noteIdx)
                 //turn note off if it's already selected
-                if (currentTrack.sequence[x].pitches.includes(currentTrack.instrumentConfig.mapping[noteIdx])) {
-                  currentTrack.sequence[x].pitches[15 - y + yOffset] = null
-                  const col = buildColumn(x, currentTrack)
+                if (currentTrack.sequence[xTranslated].pitches.includes(currentTrack.instrumentConfig.mapping[noteIdx])) {
+                  currentTrack.sequence[xTranslated].pitches[15 - y + yOffset] = null
+                  const col = buildColumn(xTranslated, currentTrack)
                   led = insertCol(led, col, x)
                 } 
                 //turn note on
                 else {
-                  currentTrack.sequence[x].pitches[noteIdx] = currentTrack.instrumentConfig.mapping[noteIdx]
-                  const col = buildColumn(x, currentTrack)
+                  currentTrack.sequence[xTranslated].pitches[noteIdx] = currentTrack.instrumentConfig.mapping[noteIdx]
+                  const col = buildColumn(xTranslated, currentTrack)
                   led = insertCol(led, col, x)
                 }
               }
             } 
             //mono
             else {
-              //first, check the input against the instrument's bounds
               let note = currentTrack.rootNote + currentTrack.scale[(15 - y) % 7] + (currentTrack.sequence[x].octave * 12)
               //allow for octaves to be input
               if (y < 9) {
                 note += 12
               }
-              
+              //first, check the input against the instrument's bounds
               if (note >= currentTrack.instrumentConfig.minNote && note <= currentTrack.instrumentConfig.maxNote) {
-                currentTrack.sequence[x].pitch = note
-                const col = buildColumn(x, currentTrack)
+                currentTrack.sequence[xTranslated].pitch = note
+                const col = buildColumn(xTranslated, currentTrack)
                 led = insertCol(led, col, x)
               }
             }
@@ -161,7 +209,7 @@ const main = async() => {
           //octave input
           else if (currentTrack.view === 1) {
             if (!currentTrack.instrumentConfig.mapping) {
-              let thisStep = currentTrack.sequence[x]
+              let thisStep = currentTrack.sequence[xTranslated]
               //this is the real # of possible octaves based on root note
               const calculatedOctaveSpan = Math.ceil((currentTrack.instrumentConfig.maxNote - currentTrack.rootNote) / 12)
               if ((15 - y) < calculatedOctaveSpan) {
@@ -170,14 +218,16 @@ const main = async() => {
                 const diff = Math.abs(prevOctave - thisStep.octave)
                 //octave increases
                 thisStep.octave > prevOctave ? thisStep.pitch += diff * 12 : thisStep.pitch -= diff * 12
-                const col = buildColumn(x, currentTrack)
+                const col = buildColumn(xTranslated, currentTrack)
                 led = insertCol(led, col, x)
               }
-            } else {
+            } 
+            //mapped
+            else {
               //check if selection is within instrument's octaveSpan
               if ((15 - y) < currentTrack.instrumentConfig.octaveSpan) {
-                currentTrack.sequence[x].octave = 15 - y
-                const col = buildColumn(x, currentTrack)
+                currentTrack.sequence[xTranslated].octave = 15 - y
+                const col = buildColumn(xTranslated, currentTrack)
                 led = insertCol(led, col, x)
               }
             }
@@ -212,11 +262,12 @@ const main = async() => {
       } 
       //mono track
       else {
-        maxApi.post(t.sequence[step].slide)
+        maxApi.post(t.msPerNote)
+        maxApi.post(t.msPerNote * .2)
         if (t.sequence[step].slide) {
-          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote + (t.msPerNote * .1)))
+          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote + (t.msPerNote * .25)))
         } else {
-          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote - (t.msPerNote * .1)))
+          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote - (t.msPerNote * .25)))
         }
       }
     }
@@ -224,17 +275,22 @@ const main = async() => {
   })
 
   maxApi.addHandler('playhead', (track) => {
-    let step = currentTrack.step
-    let topRow = buildRow(0, currentTrack)
-    
-    for (let x = 0; x < 16; x++) {
-      if (step === x) {
-        for (let y = 8; y < 16; y++) {
-          led[y][x] = 1
+    const t = currentTrack
+    let topRow = buildRow(0, t)
+    let step = t.step
+    //followMode off
+    if (!t.followMode) {
+      const [pageStart, pageEnd] = calculateLimits(t)
+      
+      for (let x = pageStart; x < pageEnd; x++) {
+        if (step === x) { 
+          for (let y = 8; y < 16; y++) {
+            led[y][x % 16] = 1
+          }
+        } else {
+          const col = buildColumn(x, currentTrack)
+          led = insertCol(led, col, x % 16)
         }
-      } else {
-        const col = buildColumn(x, currentTrack)
-        led = insertCol(led, col, x)
       }
     }
 

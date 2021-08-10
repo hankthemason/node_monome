@@ -6,8 +6,8 @@ class Track {
     this.noteValue = noteValue
     this.page = 0
     this.step = 0
-    this.upperLimit = 15
-    this.sequence = new Array(this.upperLimit + 1)
+    this.upperLimit = 16
+    this.sequence = new Array(this.upperLimit)
     this.isMaster = false
     //specifies which view a track has currently selected(pitch, velocity, pitchProb, prob, anything)
     this.view = 0
@@ -16,6 +16,7 @@ class Track {
     this.rootNote = null
     this.scale = null
     this.msPerNote = null
+    this.followMode = false
 
     for (let x = 0; x < this.sequence.length; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false)
@@ -23,7 +24,7 @@ class Track {
   }
 
   incrementStep = () => {
-    if (this.step === 15) {
+    if (this.step === this.upperLimit - 1) {
       this.step = 0
     } else {
       this.step++
