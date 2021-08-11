@@ -7,7 +7,7 @@ const insertCol = require('./utils/insertCol')
 const getMsPerNote = require('./utils/getMsPerNote')
 const calculateLimits = require('./utils/calculateLimits')
 const { MonoTrack, MappedTrack } = require('./models/track')
-const { buildRow, buildAllRows, buildViewRows } = require('./utils/buildRow')
+const { buildRow, buildAllRows, buildViewRows, buildLengthSelectorRow } = require('./utils/buildRow')
 const buildColumn = require('./utils/buildColumn')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const scales = require('./configurations/scales')
@@ -59,6 +59,7 @@ const main = async() => {
   async function run() {
     grid.key((x, y, s) => {
       const xTranslated = x + (currentTrack.page * 16)
+      let upperLimit = currentTrack.upperLimit
       if (s === 1) {
         if (y === 0) {
           //switch track
@@ -149,20 +150,24 @@ const main = async() => {
           let [pageStart, pageEnd] = calculateLimits(currentTrack)
           if (x + 1 !== pageEnd % 16) {
             currentTrack.upperLimit = (currentTrack.page * 16) + x + 1
-            maxApi.post(currentTrack.upperLimit)
+            upperLimit = currentTrack.upperLimit
+            //case where the playhead is beyond the new upperLimit
+            if (currentTrack.upperLimit <= currentTrack.step) {
+              currentTrack.step = 0
+            }
           }
-          led = buildAllRows(led, currentTrack)
+          led[y] = buildLengthSelectorRow(currentTrack)
           grid.refresh(led)
         }
         //slide on/off
-        else if (y === 6) {
+        else if (y === 6 && xTranslated < upperLimit) {
           //handleSlide()
           currentTrack.sequence[xTranslated].slide = !currentTrack.sequence[xTranslated].slide
           led[y] = buildRow(y, currentTrack)
           grid.refresh(led)
         } 
         //note on/off
-        else if (y === 7) {
+        else if (y === 7 && xTranslated < upperLimit) {
           currentTrack.sequence[xTranslated].on = !currentTrack.sequence[xTranslated].on
           const col = buildColumn(xTranslated, currentTrack)
           led = insertCol(led, col, x)
@@ -170,8 +175,7 @@ const main = async() => {
           grid.refresh(led)
         } 
         //view input (pitch, vel, prob, pitchProb, or unknown)
-        else if (y > 7) {
-          
+        else if (y > 7 && xTranslated < upperLimit) {
           //pitch input
           if (currentTrack.view === 0) {
             //turn note on

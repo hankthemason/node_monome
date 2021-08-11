@@ -35,7 +35,6 @@ const buildSecondRow = currentTrack => {
 const buildLengthSelectorRow = (currentTrack) => {
   row = []
   const [pageStart, pageEnd] = calculateLimits(currentTrack)
-  console.log(pageEnd)
   for (let x = pageStart; x < pageEnd; x++) {
     row.push(1)
   }
@@ -176,5 +175,6 @@ const buildOctaveRows = currentTrack => {
 module.exports = { 
   buildRow,
   buildViewRows, 
-  buildAllRows
+  buildAllRows,
+  buildLengthSelectorRow
 }
