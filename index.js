@@ -144,6 +144,16 @@ const main = async() => {
             grid.refresh(led)
           }
         }
+        //length selector row
+        else if (y === 2) {
+          let [pageStart, pageEnd] = calculateLimits(currentTrack)
+          if (x + 1 !== pageEnd % 16) {
+            currentTrack.upperLimit = (currentTrack.page * 16) + x + 1
+            maxApi.post(currentTrack.upperLimit)
+          }
+          led = buildAllRows(led, currentTrack)
+          grid.refresh(led)
+        }
         //slide on/off
         else if (y === 6) {
           //handleSlide()
@@ -167,7 +177,6 @@ const main = async() => {
             //turn note on
             if (!currentTrack.sequence[x].pitch || !currentTrack.sequence[x].pitches) {
               currentTrack.sequence[xTranslated].on = true
-              maxApi.post(buildRow(7, currentTrack))
               led[7] = buildRow(7, currentTrack)
             }
             //poly
@@ -262,8 +271,6 @@ const main = async() => {
       } 
       //mono track
       else {
-        maxApi.post(t.msPerNote)
-        maxApi.post(t.msPerNote * .2)
         if (t.sequence[step].slide) {
           maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote + (t.msPerNote * .25)))
         } else {

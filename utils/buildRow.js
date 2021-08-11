@@ -32,6 +32,16 @@ const buildSecondRow = currentTrack => {
   return row
 }
 
+const buildLengthSelectorRow = (currentTrack) => {
+  row = []
+  const [pageStart, pageEnd] = calculateLimits(currentTrack)
+  console.log(pageEnd)
+  for (let x = pageStart; x < pageEnd; x++) {
+    row.push(1)
+  }
+  return row
+}
+
 const buildSlideRow = (currentTrack) => {
   let row = []
   const [pageStart, pageEnd] = calculateLimits(currentTrack)
@@ -73,12 +83,14 @@ const buildRow = (rowIdx, currentTrack) => {
 const buildAllRows = (led, currentTrack) => {
   let topRow = buildTopRow(currentTrack)
   let secondRow = buildSecondRow(currentTrack)
+  let lengthSelectorRow = buildLengthSelectorRow(currentTrack)
   let slideRow = buildSlideRow(currentTrack)
   let noteOnRow = buildNoteOnRow(currentTrack)
   let viewRows = buildViewRows(currentTrack)
 
   led[0] = topRow
   led[1] = secondRow
+  led[2] = lengthSelectorRow
   led[6] = slideRow
   led[7] = noteOnRow
   led.splice(8, 8, ...viewRows)
