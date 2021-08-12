@@ -6,7 +6,7 @@ const { MonoStep, PolyStep } = require('../models/step')
 const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
   if (y === 0) {
     if (x < 6 && x !== currentTrack.track) {
-      currentTrack = tracks[x]
+      currentTrack = masterConfig.tracks[x]
       maxApi.outlet('changeTrack', x)
     } 
     //switch note value

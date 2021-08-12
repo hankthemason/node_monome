@@ -16,7 +16,9 @@ const { MonoTrack, MappedTrack } = require('./models/track')
 const { Step, PolyStep, MonoStep } = require('./models/step')
 const { 
         currentTrackHandler,
-        ledHandler
+        ledHandler,
+        syncOnHandler,
+        syncOffHandler
       } = require('./inputHandlers')
 
 const tracks = [
@@ -36,7 +38,9 @@ const main = async() => {
 
   let masterConfig = {
     tracks: tracks,
-    masterHz: masterHz
+    masterHz: masterHz,
+    syncing: syncing,
+    syncTrack: syncTrack
   }
 
   const initialize = async() => {
@@ -88,18 +92,8 @@ const main = async() => {
           } 
           //sync to master
           else if (x === 7 && !currentTrack.isMaster) {
-            syncing = true
-            syncTrack = currentTrack
-            let flicker = 0
-            const timer = setInterval(() => {
-              if (syncing) {
-                led[1][7] = flicker ? 0 : 1
-                flicker = !flicker
-                grid.refresh(led)
-              } else {
-                clearInterval(timer)
-              }
-            }, 1000 / 10)
+            masterConfig = syncOnHandler(masterConfig, currentTrack)
+            flicker(led, grid, masterConfig)
           } 
         }
         //length selector row
@@ -221,10 +215,10 @@ const main = async() => {
     let t = tracks[track]
     let step = t.step
     //connect the sync function to incoming ticks
-    if (syncing === true && t.isMaster && step === 0) {
-      syncTrack.step = 0
-      syncing = false
-      syncTrack = null
+    if (masterConfig.syncing === true && t.isMaster && step === 0) {
+      currentTrack.step = 0
+      masterConfig.syncing = false
+      masterConfig.syncTrack = null
       led[1][7] = 0
     }
     if (t.sequence[step].on) {
@@ -303,6 +297,19 @@ const main = async() => {
       tracks[i].step = 0;
     }
   })
+
+  const flicker = (led, grid, masterConfig) => {
+    let flicker = 0
+    const timer = setInterval(() => {
+      if (masterConfig.syncing) {
+        led[1][7] = flicker ? 0 : 1
+        flicker = !flicker
+        grid.refresh(led)
+      } else {
+        clearInterval(timer)
+      }
+    }, 1000 / 10)
+  }
 
   initialize()
   run()
