@@ -172,9 +172,18 @@ const buildOctaveRows = currentTrack => {
   return rows
 }
 
+//refresh various rows in upper half when upperLimit changes
+const refreshRows = (led, currentTrack) => {
+  //build rows 3 - 5
+  led[6] = buildSlideRow(currentTrack)
+  led[7] = buildNoteOnRow(currentTrack)
+  return led
+}
+
 module.exports = { 
   buildRow,
   buildViewRows, 
   buildAllRows,
-  buildLengthSelectorRow
+  buildLengthSelectorRow,
+  refreshRows
 }

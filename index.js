@@ -6,11 +6,15 @@ const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
 const getMsPerNote = require('./utils/getMsPerNote')
 const calculateLimits = require('./utils/calculateLimits')
-const { MonoTrack, MappedTrack } = require('./models/track')
-const { buildRow, buildAllRows, buildViewRows, buildLengthSelectorRow } = require('./utils/buildRow')
-const buildColumn = require('./utils/buildColumn')
+const { buildRow, 
+        buildAllRows, 
+        buildViewRows, 
+        buildLengthSelectorRow,
+        refreshRows } = require('./utils/buildRow')
+const { buildColumn, refreshColumnArea } = require('./utils/buildColumn')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const scales = require('./configurations/scales')
+const { MonoTrack, MappedTrack } = require('./models/track')
 const { Step, PolyStep, MonoStep } = require('./models/step')
 
 const tracks = [
@@ -148,12 +152,21 @@ const main = async() => {
         //length selector row
         else if (y === 2) {
           let [pageStart, pageEnd] = calculateLimits(currentTrack)
+          //change upperLimit
           if (x + 1 !== pageEnd % 16) {
             currentTrack.upperLimit = (currentTrack.page * 16) + x + 1
             upperLimit = currentTrack.upperLimit
             //case where the playhead is beyond the new upperLimit
+            //differentiation here because I don't want to refresh all rows if I don't have to
             if (currentTrack.upperLimit <= currentTrack.step) {
+              let prevStep = currentTrack.step - 1
               currentTrack.step = 0
+              const col = buildColumn(prevStep, currentTrack)
+              led = insertCol(led, col, prevStep % 16)
+              led = refreshColumnArea(led, upperLimit,currentTrack)
+              led = refreshRows(led, currentTrack)
+            } else {
+              led = buildAllRows(led, currentTrack)
             }
           }
           led[y] = buildLengthSelectorRow(currentTrack)

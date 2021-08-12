@@ -1,3 +1,6 @@
+const calculateLimits = require('./calculateLimits')
+const insertCol = require('./insertCol')
+
 const buildColumn = (x, currentTrack) => {
   //view is pitch
   if (currentTrack.view === 0) {
@@ -14,7 +17,7 @@ const buildPitchColumn = (x, currentTrack) => {
 
   const start = currentTrack.sequence[x].octave * 8
 
-  if (currentTrack.sequence[x].on) {
+  if (currentTrack.sequence[x].on && x < currentTrack.upperLimit) {
     //mappedTrack
     if (currentTrack.instrumentConfig.mapping) {
       for (let y = start; y < start + 8; y++) {
@@ -46,7 +49,7 @@ const buildPitchColumn = (x, currentTrack) => {
 const buildOctaveColumn = (x, currentTrack) => {
   let column = new Array(8).fill(0)
 
-  if (currentTrack.sequence[x].on) {
+  if (currentTrack.sequence[x].on && x < currentTrack.upperLimit) {
     for (let y = 0; y <= currentTrack.sequence[x].octave; y++) {
       column[column.length - (y + 1)] = 1
     }
@@ -55,4 +58,23 @@ const buildOctaveColumn = (x, currentTrack) => {
   return column
 }
 
-module.exports = buildColumn
+const refreshColumnArea = (led, xStart, currentTrack) => {
+  
+  const [pageStart, pageEnd] = calculateLimits(currentTrack)
+  console.log(xStart)
+  console.log(pageStart)
+  console.log(pageEnd)
+  
+  for (let x = xStart; x < (currentTrack.page + 1) * 16; x++) {
+    let col = buildColumn(x, currentTrack)
+    console.log(col)
+    led = insertCol(led, col, x % 16)
+  }
+
+  return led
+}
+
+module.exports = {
+  buildColumn,
+  refreshColumnArea
+}
