@@ -1,7 +1,5 @@
 const maxApi = require('max-api')
 const monomeGrid = require('monome-grid')
-const noteValues = require('./configurations/noteValues')
-const views = require('./configurations/views')
 const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
 const getMsPerNote = require('./utils/getMsPerNote')
@@ -16,6 +14,10 @@ const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const scales = require('./configurations/scales')
 const { MonoTrack, MappedTrack } = require('./models/track')
 const { Step, PolyStep, MonoStep } = require('./models/step')
+const { 
+        currentTrackHandler,
+        ledHandler
+      } = require('./inputHandlers')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
@@ -30,7 +32,12 @@ const main = async() => {
   let syncing = false
   let syncTrack
   let currentTrack
-  let masterHertz
+  let masterHz
+
+  let masterConfig = {
+    tracks: tracks,
+    masterHz: masterHz
+  }
 
   const initialize = async() => {
     led = create2DArray(16, 16)
@@ -65,40 +72,19 @@ const main = async() => {
       const xTranslated = x + (currentTrack.page * 16)
       let upperLimit = currentTrack.upperLimit
       if (s === 1) {
+        //change currentTrack / currentTrack.noteValue / currentTrack.page
         if (y === 0) {
-          //switch track
-          if (x < 6 && x !== currentTrack.track) {
-            currentTrack = tracks[x]
-            led = buildAllRows(led, currentTrack)
-            grid.refresh(led)
-            maxApi.outlet('changeTrack', x)
-          } 
-          //switch note value
-          else if (x > 5 && x < 12) {
-            currentTrack.noteValue = x - 6
-            currentTrack.msPerNote = getMsPerNote(masterHertz, currentTrack)
-            led[y] = buildRow(y, currentTrack)
-            grid.refresh(led)
-            maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
-          }
-          //switch current page on view
-          else if (x > 11) {
-            if ((x - 12) < currentTrack.numPages) {
-              currentTrack.page = x - 12
-              led = buildAllRows(led, currentTrack)
-              grid.refresh(led)
-            }
-          }
+          currentTrack = currentTrackHandler(x, y, currentTrack, masterConfig)
+          led = ledHandler(x, y, led, currentTrack)
+          grid.refresh(led)
         }
         //view selector / sync to master / numPages
         else if (y === 1) {
           //view selector
-          if (x < 5) {
-            currentTrack.view = x
-            led[y] = buildRow(y, currentTrack)
-            const viewRows = buildViewRows(currentTrack)
-            led.splice(8, 8, ...viewRows)
-            grid.refresh(led)   
+          if (x < 5 || x > 11) {
+            currentTrack = currentTrackHandler(x, y, currentTrack, masterConfig)
+            led = ledHandler(x, y, led, currentTrack)
+            grid.refresh(led)
           } 
           //sync to master
           else if (x === 7 && !currentTrack.isMaster) {
@@ -115,39 +101,6 @@ const main = async() => {
               }
             }, 1000 / 10)
           } 
-          //numPages selector
-          else if (x > 11) {
-            let t = currentTrack
-            const prevNumPages = t.numPages
-            t.numPages = x - 11
-            t.upperLimit = 16 * t.numPages
-
-            const diff = Math.abs(t.numPages - prevNumPages)
-            //numPages increased
-            if (prevNumPages < t.numPages) {
-              for (let x = 0; x < 16 * diff; x++) {
-                //mapping instrument
-                if (t.instrumentConfig.mapping) {
-                  t.sequence.push(new PolyStep(false, new Array(t.instrumentConfig.mapping.length), 0, 0, 0, 0, false))
-                }
-                //mono
-                if (!t.poly) {
-                  t.sequence.push(new MonoStep(false, null, 0, 0, 0, 0, false))
-                }
-              }
-            } 
-            //if numPages decreased, don't do anything: keep the extra sequence parts in memory
-            else if (prevNumPages > t.numPages && t.page >= t.numPages) {
-              if (t.page >= t.numPages) {
-                t.page = t.numPages - 1
-              }
-              t.step = (t.step % 16) + (t.page * 16)
-              led[0] = buildRow(0, currentTrack)
-            }
-
-            led[y] = buildRow(y, currentTrack)
-            grid.refresh(led)
-          }
         }
         //length selector row
         else if (y === 2) {
