@@ -67,6 +67,12 @@ const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
         currentTrack.step = 0
       }
     }
+  } else if (y === 6) {
+    if (currentTrack.sequence[x].on) {
+      currentTrack.sequence[x].slide = !currentTrack.sequence[x].slide
+    }
+  } else if (y === 7) {
+    currentTrack.sequence[x].on = !currentTrack.sequence[x].on
   }
   
   return currentTrack

@@ -3,6 +3,8 @@ const {
   buildAllRows, 
   buildViewRows, 
   buildLengthSelectorRow } = require('../utils/buildRow')
+const { buildColumn } = require('../utils/buildColumn')
+const insertCol = require('../utils/insertCol')
 const calculateLimits = require('../utils/calculateLimits')
 
 const ledHandler = (x, y, led, currentTrack) => {
@@ -12,6 +14,10 @@ const ledHandler = (x, y, led, currentTrack) => {
     led = handleRow1(x, y, led, currentTrack)
   } else if (y === 2) {
     led = handleRow2(x, y, led, currentTrack)
+  } else if (y === 6) {
+    led = handleRow6(x, y, led, currentTrack)
+  } else if (y === 7) {
+    led = handleRow7(x, y, led, currentTrack)
   }
   return led
 }
@@ -61,6 +67,18 @@ const handleRow2 = (x, y, led, currentTrack) => {
     }
   }
   led[y] = buildLengthSelectorRow(currentTrack)
+  return led
+}
+
+const handleRow6 = (x, y, led, currentTrack) => {
+  led = buildRow(y, currentTrack)
+  return led
+}
+
+const handleRow7 = (x, y, led, currentTrack) => {
+  const col = buildColumn(x, currentTrack)
+  led = insertCol(led, col, x % 16)
+  led[y] = buildRow(y, currentTrack)
   return led
 }
 

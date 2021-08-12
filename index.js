@@ -105,18 +105,17 @@ const main = async() => {
         //here we start to use xTranslated value because these rows can point to 
         //steps in the sequence that are greater than 16
         //slide on/off
-        else if (y === 6 && xTranslated < upperLimit) {
+        else if (y === 6 && xTranslated < currentTrack.upperLimit) {
           //handleSlide()
-          currentTrack.sequence[xTranslated].slide = !currentTrack.sequence[xTranslated].slide
-          led[y] = buildRow(y, currentTrack)
+          currentTrack = currentTrackHandler(xTranslated, y, currentTrack, masterConfig) 
+          led[y] = ledHandler(x, y)
           grid.refresh(led)
         } 
         //note on/off
-        else if (y === 7 && xTranslated < upperLimit) {
-          currentTrack.sequence[xTranslated].on = !currentTrack.sequence[xTranslated].on
-          const col = buildColumn(xTranslated, currentTrack)
-          led = insertCol(led, col, x)
-          led[y] = buildRow(y, currentTrack)
+        else if (y === 7 && xTranslated < currentTrack.upperLimit) {
+          currentTrack = currentTrackHandler(xTranslated, y, currentTrack, masterConfig)
+          led = ledHandler(xTranslated, y, led, currentTrack)
+          maxApi.post('hi')
           grid.refresh(led)
         } 
         //view input (pitch, vel, prob, pitchProb, or unknown)
