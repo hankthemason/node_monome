@@ -98,27 +98,12 @@ const main = async() => {
         }
         //length selector row
         else if (y === 2) {
-          let [pageStart, pageEnd] = calculateLimits(currentTrack)
-          //change upperLimit
-          if (x + 1 !== pageEnd % 16) {
-            currentTrack.upperLimit = (currentTrack.page * 16) + x + 1
-            upperLimit = currentTrack.upperLimit
-            //case where the playhead is beyond the new upperLimit
-            //differentiation here because I don't want to refresh all rows if I don't have to
-            if (currentTrack.upperLimit <= currentTrack.step) {
-              let prevStep = currentTrack.step - 1
-              currentTrack.step = 0
-              const col = buildColumn(prevStep, currentTrack)
-              led = insertCol(led, col, prevStep % 16)
-              led = refreshColumnArea(led, upperLimit,currentTrack)
-              led = refreshRows(led, currentTrack)
-            } else {
-              led = buildAllRows(led, currentTrack)
-            }
-          }
-          led[y] = buildLengthSelectorRow(currentTrack)
+          currentTrack = currentTrackHandler(x, y, currentTrack, masterConfig)
+          led = ledHandler(x, y, led, currentTrack)
           grid.refresh(led)
         }
+        //here we start to use xTranslated value because these rows can point to 
+        //steps in the sequence that are greater than 16
         //slide on/off
         else if (y === 6 && xTranslated < upperLimit) {
           //handleSlide()

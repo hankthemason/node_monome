@@ -1,5 +1,6 @@
 const maxApi = require('max-api')
 const getMsPerNote = require('../utils/getMsPerNote')
+const calculateLimits = require('../utils/calculateLimits')
 const noteValues = require('../configurations/noteValues')
 const { MonoStep, PolyStep } = require('../models/step')
 
@@ -52,6 +53,18 @@ const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
           t.page = t.numPages - 1
         }
         t.step = (t.step % 16) + (t.page * 16)
+      }
+    }
+  } else if (y == 2) {
+    let [pageStart, pageEnd] = calculateLimits(currentTrack)
+    //change upperLimit
+    if (x + 1 !== pageEnd % 16) {
+      currentTrack.upperLimit = (currentTrack.page * 16) + x + 1
+      //case where the playhead is beyond the new upperLimit
+      //differentiation here because I don't want to refresh all rows if I don't have to
+      if (currentTrack.upperLimit <= currentTrack.step) {
+        let prevStep = currentTrack.step - 1
+        currentTrack.step = 0
       }
     }
   }
