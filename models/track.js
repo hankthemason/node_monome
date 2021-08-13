@@ -18,7 +18,7 @@ class Track {
     this.msPerNote = null
     this.followMode = false
 
-    for (let x = 0; x < this.sequence.length; x++) {
+    for (let x = 0; x < 64; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false)
     }
   }
@@ -56,6 +56,8 @@ class Track {
     if (this.upperLimit <= this.step) {
       this.step = 0
     }
+
+    this.numPages = Math.ceil(this.upperLimit / 16)
   }
 
   updateStepSlide = (step) => {
@@ -66,6 +68,22 @@ class Track {
 
   updateStepOn = (step) => {
     this.sequence[step].on = !this.sequence[step].on
+  }
+
+  updateNumPages = (newNumPages) => {
+    const prevNumPages = this.numPages
+    const prevEnd = this.upperLimit
+    this.numPages = newNumPages
+    this.upperLimit = 16 * this.numPages
+    const diff = Math.abs(this.numPages - prevNumPages)
+
+    //if numPages decreased, don't do anything: keep the extra sequence parts in memory
+    if (prevNumPages > this.numPages && this.page >= this.numPages) {
+      if (this.page >= this.numPages) {
+        this.page = this.numPages - 1
+      }
+      this.step = (this.step % 16) + (this.page * 16)
+    }
   }
 
   
@@ -83,29 +101,8 @@ class MonoTrack extends Track {
     super(track, noteValue, instrumentConfig)
     this.poly = false
 
-    for (let x = 0; x < this.sequence.length; x++) {
+    for (let x = 0; x < 64; x++) {
       this.sequence[x] = new MonoStep(false, null, 0, 0, 0, 0, false)
-    }
-
-  }
-
-  updateNumPages = (newNumPages) => {
-    const prevNumPages = this.numPages
-    this.numPages = newNumPages
-    this.upperLimit = 16 * this.numPages
-    const diff = Math.abs(this.numPages - prevNumPages)
-
-    if (prevNumPages < this.numPages) {
-      for (let x = 0; x < 16 * diff; x++) {
-        this.sequence.push(new MonoStep(false, null, 0, 0, 0, 0, false))
-      }
-    } 
-    //if numPages decreased, don't do anything: keep the extra sequence parts in memory
-    else if (prevNumPages > this.numPages && this.page >= this.numPages) {
-      if (this.page >= this.numPages) {
-        this.page = this.numPages - 1
-      }
-      this.step = (this.step % 16) + (this.page * 16)
     }
 
   }
@@ -132,6 +129,17 @@ class MonoTrack extends Track {
       this.sequence[step].octave > prevOctave ? this.sequence[step].pitch += diff * 12 : this.sequence[step].pitch -= diff * 12
     }
   }
+
+  getNotes = step => {
+    const ms = this.msPerNote
+    const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
+    
+    if (this.sequence[step].on) {
+      return [this.sequence[step].pitch, msPerNote]
+    } else {
+      return [null, null]
+    }
+  }
 }
 
 //a track for an instrument that has an arbitrary pitch-mapping
@@ -140,26 +148,8 @@ class MappedTrack extends PolyTrack {
   constructor(track, noteValue, instrumentConfig) {
     super(track, noteValue, instrumentConfig)
 
-    for (let x = 0; x < this.sequence.length; x++) {
+    for (let x = 0; x < 64; x++) {
       this.sequence[x] = new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, false)
-    }
-  }
-
-  updateNumPages = (newNumPages) => {
-    const prevNumPages = this.numPages
-    this.numPages = newNumPages
-    this.upperLimit = 16 * this.numPages
-    const diff = Math.abs(this.numPages - prevNumPages)
-
-    if (prevNumPages < this.numPages) {
-      for (let x = 0; x < 16 * diff; x++) {
-        this.sequence.push(new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, false))
-      }
-    } else if (prevNumPages > this.numPages && this.page >= this.numPages) {
-      if (this.page >= this.numPages) {
-        this.page = this.numPages - 1
-      }
-      this.step = (this.step % 16) + (this.page * 16)
     }
   }
 
@@ -182,7 +172,18 @@ class MappedTrack extends PolyTrack {
       this.sequence[step].octave = 15 - y
     }
   }
-  
+
+  getNotes = step => {
+    const ms = this.msPerNote
+    const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
+    
+    if (this.sequence[step].on) {
+      const notes = this.sequence[step].pitches
+      return [notes, msPerNote]
+    } else {
+      return [null, null]
+    } 
+  }
 }
 
 //a track for an instrument with traditional pitch-mapping
