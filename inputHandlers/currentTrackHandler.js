@@ -11,7 +11,7 @@ const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
     } 
     //switch note value
     else if (x > 5 && x < 12) {
-      currentTrack.updateNoteValue(x - 6, masterConfig)
+      currentTrack.updateNoteValue(x - 6)
       maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
     }
     //switch current page on view

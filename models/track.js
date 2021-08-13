@@ -1,4 +1,5 @@
 const { Step, PolyStep, MonoStep } = require('./step')
+const noteValues = require('../configurations/noteValues')
 
 class Track {
   constructor(track, noteValue, instrumentConfig) {
@@ -31,7 +32,7 @@ class Track {
     }
   }
 
-  updateNoteValue = (newNoteValue, masterConfig) => {
+  updateNoteValue = (newNoteValue) => {
     this.noteValue = newNoteValue
   }
 
