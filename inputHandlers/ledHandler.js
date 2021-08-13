@@ -51,23 +51,26 @@ const handleRow1 = (x, y, led, currentTrack) => {
   else if (x > 11) {
     led[0] = buildRow(0, currentTrack)
     led[y] = buildRow(y, currentTrack)
+    led[7] = buildRow(7, currentTrack)
   }
+
+  led[2] = buildLengthSelectorRow(currentTrack)
   return led
 }
 
 const handleRow2 = (x, y, led, currentTrack) => {
   let [pageStart, pageEnd] = calculateLimits(currentTrack)
   //change upperLimit
-  if (x + 1 !== pageEnd % 16) {
-    //if reducing length, only rebuild the columns to the right of the new upper limit
-    if (currentTrack.upperLimit <= currentTrack.step) {
-      const col = buildColumn(prevStep, currentTrack)
-      led = insertCol(led, col, prevStep % 16)
-      led = refreshColumnArea(led, upperLimit,currentTrack)
-      led = refreshRows(led, currentTrack)
-    } else {
-      led = buildAllRows(led, currentTrack)
-    }
+
+  //if reducing length, only rebuild the columns to the right of the new upper limit
+  if (currentTrack.upperLimit <= currentTrack.step) {
+    const col = buildColumn(prevStep, currentTrack)
+    led = insertCol(led, col, prevStep % 16)
+    led = refreshColumnArea(led, upperLimit,currentTrack)
+    led = refreshRows(led, currentTrack)
+    led[1] = buildRow(1, currentTrack)
+  } else {
+    led = buildAllRows(led, currentTrack)
   }
   led[y] = buildLengthSelectorRow(currentTrack)
   return led

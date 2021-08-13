@@ -13,7 +13,6 @@ const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const noteValues = require('./configurations/noteValues')
 const scales = require('./configurations/scales')
 const { MonoTrack, MappedTrack } = require('./models/track')
-const { Step, PolyStep, MonoStep } = require('./models/step')
 const { currentTrackHandler,
         ledHandler,
         syncOnHandler,
@@ -73,7 +72,6 @@ const main = async() => {
   async function run() {
     grid.key((x, y, s) => {
       const step = x + (currentTrack.page * 16)
-      let upperLimit = currentTrack.upperLimit
       if (s === 1) {
         if (y === 1 && x === 7 && !currentTrack.isMaster) {
           masterConfig = syncOnHandler(masterConfig, currentTrack)
@@ -112,6 +110,7 @@ const main = async() => {
   maxApi.addHandler('tick', (track) => {
     let t = tracks[track]
     let step = t.step
+
     //connect the sync function to incoming ticks
     if (masterConfig.syncing === true && t.isMaster && step === 0) {
       currentTrack.step = 0
@@ -119,34 +118,23 @@ const main = async() => {
       masterConfig.syncTrack = null
       led[1][7] = 0
     }
-    if (t.sequence[step].on) {
-      //poly track
-      if (t.poly) {
-        const pitches = t.sequence[step].pitches
-        let notes = [] 
-        for (let i = 0; i < pitches.length; i++) {
-          if (pitches[i]) {
-            notes.push(pitches[i])
-          }
-        }
-        maxApi.outlet('notes', track, notes, t.msPerNote)
+
+    const [notes, msPerNote] = t.getNotes(step)
+    if (notes && notes.length > 1) {
+      for (const note of notes) {
+        maxApi.outlet('notes', track, note, msPerNote)
       } 
-      //mono track
-      else {
-        if (t.sequence[step].slide) {
-          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote + (t.msPerNote * .25)))
-        } else {
-          maxApi.outlet('note', track, t.sequence[step].pitch, (t.msPerNote - (t.msPerNote * .25)))
-        }
-      }
+    } else if (notes) {
+      maxApi.outlet('note', track, notes, msPerNote)
     }
+
     t.incrementStep()
   })
 
   maxApi.addHandler('playhead', (track) => {
     const t = currentTrack
     let topRow = buildRow(0, t)
-    let step = t.step
+    let step = t.step//((t.step - 1) + t.upperLimit) % t.upperLimit
     //followMode off
     if (!t.followMode) {
       const [pageStart, pageEnd] = calculateLimits(t)
@@ -163,13 +151,6 @@ const main = async() => {
       }
     }
 
-    led[0] = topRow
-    grid.refresh(led)
-  })
-
-  maxApi.addHandler('changeTrack', (track) => {
-    currentTrack = tracks[track]
-    topRow = buildRow(0, currentTrack)
     led[0] = topRow
     grid.refresh(led)
   })

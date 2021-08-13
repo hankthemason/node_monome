@@ -46,9 +46,6 @@ const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
       currentTrack.updateStepPitch(x, y)
     } else if (currentTrack.view === 1) {
       currentTrack.updateStepOctave(x, y)
-      maxApi.post('current track handler')
-      maxApi.post(x)
-      maxApi.post(currentTrack.sequence[x].octave)
     }
   }
   
