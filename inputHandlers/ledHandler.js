@@ -18,12 +18,14 @@ const ledHandler = (x, y, led, currentTrack) => {
     led = handleRow6(x, y, led, currentTrack)
   } else if (y === 7) {
     led = handleRow7(x, y, led, currentTrack)
+  } else if (y > 7) {
+    led = handleViewRows(x, y, led, currentTrack)
   }
   return led
 }
 
 const handleRow0 = (x, y, led, currentTrack) => {
-  if (x < 6 && x !== currentTrack.track) {
+  if (x < 6) {
     led = buildAllRows(led, currentTrack)
   } 
   //switch note value
@@ -47,6 +49,7 @@ const handleRow1 = (x, y, led, currentTrack) => {
   } 
   //numPages selector
   else if (x > 11) {
+    led[0] = buildRow(0, currentTrack)
     led[y] = buildRow(y, currentTrack)
   }
   return led
@@ -79,6 +82,13 @@ const handleRow7 = (x, y, led, currentTrack) => {
   const col = buildColumn(x, currentTrack)
   led = insertCol(led, col, x % 16)
   led[y] = buildRow(y, currentTrack)
+  return led
+}
+
+const handleViewRows = (x, y, led, currentTrack) => {
+  led[7] = buildRow(7, currentTrack)
+  const col = buildColumn(x, currentTrack)
+  led = insertCol(led, col, x % 16)
   return led
 }
 

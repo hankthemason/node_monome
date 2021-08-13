@@ -1,7 +1,6 @@
 class Step {
   constructor(on, pitch, velocity, octave, prob, pitchProb, slide) {
     this.on = on,
-    this.pitch = pitch,
     this.velocity = velocity, 
     this.octave = octave,
     this.prob = prob,
@@ -12,7 +11,8 @@ class Step {
 
 class MonoStep extends Step {
   constructor(on, pitch, velocity, octave, prob, pitchProb, slide) {
-    super(on, pitch, velocity, octave, prob, pitchProb, slide)
+    super(on, velocity, octave, prob, pitchProb, slide)
+    this.pitch = pitch
   }
 }
 

@@ -61,13 +61,9 @@ const buildOctaveColumn = (x, currentTrack) => {
 const refreshColumnArea = (led, xStart, currentTrack) => {
   
   const [pageStart, pageEnd] = calculateLimits(currentTrack)
-  console.log(xStart)
-  console.log(pageStart)
-  console.log(pageEnd)
   
   for (let x = xStart; x < (currentTrack.page + 1) * 16; x++) {
     let col = buildColumn(x, currentTrack)
-    console.log(col)
     led = insertCol(led, col, x % 16)
   }
 
