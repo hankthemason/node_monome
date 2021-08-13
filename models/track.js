@@ -31,7 +31,7 @@ class Track {
     }
   }
 
-  updateNoteValue = (newNoteValue, masterConfig) => {
+  updateNoteValue = (newNoteValue) => {
     this.noteValue = newNoteValue
   }
 

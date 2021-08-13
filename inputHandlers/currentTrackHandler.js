@@ -3,15 +3,11 @@ const calculateLimits = require('../utils/calculateLimits')
 const noteValues = require('../configurations/noteValues')
 const { MonoStep, PolyStep } = require('../models/step')
 
-const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
+const currentTrackHandler = (x, y, currentTrack) => {
   if (y === 0) {
-    if (x < 6 && x !== currentTrack.track) {
-      currentTrack = masterConfig.tracks[x]
-      maxApi.outlet('changeTrack', x)
-    } 
     //switch note value
-    else if (x > 5 && x < 12) {
-      currentTrack.updateNoteValue(x - 6, masterConfig)
+    if (x > 5 && x < 12) {
+      currentTrack.updateNoteValue(x - 6)
       maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
     }
     //switch current page on view
