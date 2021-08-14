@@ -38,7 +38,6 @@ const main = async() => {
   let currentTrack = masterConfig.currentTrack
 
   l.buildGrid(currentTrack)
-  maxApi.post(l.grid)
 
   const initialize = async() => {
     led = create2DArray(16, 16)
@@ -74,8 +73,8 @@ const main = async() => {
         if (y === 0 && x < 6 && x !== currentTrack.track) {
           masterConfig.updateCurrentTrack(tracks[x])
           currentTrack = masterConfig.currentTrack
-          led = ledHandler(x, y, led, currentTrack)
-          grid.refresh(led)
+          l.buildGrid(currentTrack)
+          grid.refresh(l.grid)
           maxApi.outlet('changeTrack', x)
         } 
         //sync to masterTrack
@@ -86,31 +85,37 @@ const main = async() => {
         //this part of the grid is page-agnostic and can use x values
         else if (y < 6) {
           currentTrack = currentTrackHandler(x, y, currentTrack)
-          led = ledHandler(x, y, led, currentTrack)
+          l.buildGrid(currentTrack)
+          led = l.grid
+          grid.refresh(led)
+        } else if (y >= 6) {
+          currentTrack = currentTrackHandler(step, y, currentTrack)
+          l.buildGrid(currentTrack)
+          led = l.grid
           grid.refresh(led)
         }
         //here we start to use step value because these rows can point to 
         //steps in the sequence that are greater than 16
         //slide on/off
-        else if (y === 6 && step < currentTrack.upperLimit) {
-          currentTrack = currentTrackHandler(step, y, currentTrack) 
-          led = ledHandler(x, y, led, currentTrack)
-          grid.refresh(led)
-        } 
-        //note on/off
-        else if (y === 7 && step < currentTrack.upperLimit) {
-          currentTrack = currentTrackHandler(step, y, currentTrack)
-          led = ledHandler(step, y, led, currentTrack)
-          grid.refresh(led)
-        } 
-        //view input (pitch, vel, prob, pitchProb, or unknown)
-        else if (y > 7 && step < currentTrack.upperLimit) {
-          currentTrack = currentTrackHandler(step, y, currentTrack)
-          led = ledHandler(step, y, led, currentTrack)
-          grid.refresh(led)
-        }
-        l.buildGrid(currentTrack)
-        maxApi.post(l.grid)
+        // else if (y === 6 && step < currentTrack.upperLimit) {
+        //   currentTrack = currentTrackHandler(step, y, currentTrack) 
+        //   led = ledHandler(x, y, led, currentTrack)
+        //   grid.refresh(led)
+        // } 
+        // //note on/off
+        // else if (y === 7 && step < currentTrack.upperLimit) {
+        //   currentTrack = currentTrackHandler(step, y, currentTrack)
+        //   led = ledHandler(step, y, led, currentTrack)
+        //   grid.refresh(led)
+        // } 
+        // //view input (pitch, vel, prob, pitchProb, or unknown)
+        // else if (y > 7 && step < currentTrack.upperLimit) {
+        //   currentTrack = currentTrackHandler(step, y, currentTrack)
+        //   led = ledHandler(step, y, led, currentTrack)
+        //   grid.refresh(led)
+        // }
+        // l.buildGrid(currentTrack)
+        // maxApi.post(l.grid)
       }
     });
   }
