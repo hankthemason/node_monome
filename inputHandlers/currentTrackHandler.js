@@ -3,14 +3,14 @@ const calculateLimits = require('../utils/calculateLimits')
 const noteValues = require('../configurations/noteValues')
 const { MonoStep, PolyStep } = require('../models/step')
 
-const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
+const currentTrackHandler = (x, y, currentTrack) => {
   if (y === 0) {
-    if (x < 6 && x !== currentTrack.track) {
-      currentTrack = masterConfig.tracks[x]
-      maxApi.outlet('changeTrack', x)
-    } 
     //switch note value
+<<<<<<< HEAD
     else if (x > 5 && x < 12) {
+=======
+    if (x > 5 && x < 12) {
+>>>>>>> masterConfig_class
       currentTrack.updateNoteValue(x - 6)
       maxApi.outlet('changeNoteValue', noteValues[currentTrack.noteValue].coeff, currentTrack.track)
     }
@@ -35,7 +35,9 @@ const currentTrackHandler = (x, y, currentTrack, masterConfig) => {
       currentTrack.updateUpperLimit(x)
     }
   } else if (y === 6) {
+    maxApi.post('hi')
     currentTrack.updateStepSlide(x)
+    maxApi.post(currentTrack.msPerNote)
   } else if (y === 7) {
     currentTrack.updateStepOn(x)
   } else if (y > 7 && x < currentTrack.upperLimit) {

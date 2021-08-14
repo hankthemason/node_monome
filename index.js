@@ -13,6 +13,7 @@ const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const noteValues = require('./configurations/noteValues')
 const scales = require('./configurations/scales')
 const { MonoTrack, MappedTrack } = require('./models/track')
+const MasterConfig = require('./models/masterConfig')
 const { currentTrackHandler,
         ledHandler,
         syncOnHandler,
@@ -27,25 +28,16 @@ const main = async() => {
   let grid = await monomeGrid(); // optionally pass in grid identifier
   
   let led = [];
-  let masterTrack
   let syncing = false
   let syncTrack
-  let currentTrack
   let masterHz = 0.5
 
-  let masterConfig = {
-    tracks: tracks,
-    masterHz: masterHz,
-    syncing: syncing,
-    syncTrack: syncTrack,
-    noteValues: noteValues
-  }
+  let masterConfig = new MasterConfig(tracks, masterHz, syncing, syncTrack, noteValues, tracks[0])
+  let currentTrack = masterConfig.currentTrack
 
   const initialize = async() => {
     led = create2DArray(16, 16)
-    masterTrack = tracks[0]
-    masterTrack.isMaster = true
-    currentTrack = tracks[0]
+    tracks[0].isMaster = true
 
     led = buildAllRows(led, currentTrack)
     grid.refresh(led)
@@ -73,13 +65,22 @@ const main = async() => {
     grid.key((x, y, s) => {
       const step = x + (currentTrack.page * 16)
       if (s === 1) {
-        if (y === 1 && x === 7 && !currentTrack.isMaster) {
+        //change current track
+        if (y === 0 && x < 6 && x !== currentTrack.track) {
+          masterConfig.updateCurrentTrack(tracks[x])
+          currentTrack = masterConfig.currentTrack
+          led = ledHandler(x, y, led, currentTrack)
+          grid.refresh(led)
+          maxApi.outlet('changeTrack', x)
+        } 
+        //sync to masterTrack
+        else if (y === 1 && x === 7 && !currentTrack.isMaster) {
           masterConfig = syncOnHandler(masterConfig, currentTrack)
           flicker(led, grid, masterConfig)
         } 
         //this part of the grid is page-agnostic and can use x values
         else if (y < 6) {
-          currentTrack = currentTrackHandler(x, y, currentTrack, masterConfig)
+          currentTrack = currentTrackHandler(x, y, currentTrack)
           led = ledHandler(x, y, led, currentTrack)
           grid.refresh(led)
         }
@@ -87,19 +88,19 @@ const main = async() => {
         //steps in the sequence that are greater than 16
         //slide on/off
         else if (y === 6 && step < currentTrack.upperLimit) {
-          currentTrack = currentTrackHandler(step, y, currentTrack, masterConfig) 
-          led[y] = ledHandler(x, y, led, currentTrack)
+          currentTrack = currentTrackHandler(step, y, currentTrack) 
+          led = ledHandler(x, y, led, currentTrack)
           grid.refresh(led)
         } 
         //note on/off
         else if (y === 7 && step < currentTrack.upperLimit) {
-          currentTrack = currentTrackHandler(step, y, currentTrack, masterConfig)
+          currentTrack = currentTrackHandler(step, y, currentTrack)
           led = ledHandler(step, y, led, currentTrack)
           grid.refresh(led)
         } 
         //view input (pitch, vel, prob, pitchProb, or unknown)
         else if (y > 7 && step < currentTrack.upperLimit) {
-          currentTrack = currentTrackHandler(step, y, currentTrack, masterConfig)
+          currentTrack = currentTrackHandler(step, y, currentTrack)
           led = ledHandler(step, y, led, currentTrack)
           grid.refresh(led)
         }
@@ -159,6 +160,7 @@ const main = async() => {
     masterConfig.masterHz = hz
     for (const track of tracks) {
       track.updateMsPerNote(masterConfig)
+      maxApi.post(track.msPerNote)
     }
   })
 
