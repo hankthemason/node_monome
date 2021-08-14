@@ -14,6 +14,7 @@ const noteValues = require('./configurations/noteValues')
 const scales = require('./configurations/scales')
 const { MonoTrack, MappedTrack } = require('./models/track')
 const MasterConfig = require('./models/masterConfig')
+const Led = require('./models/led')
 const { currentTrackHandler,
         ledHandler,
         syncOnHandler,
@@ -26,6 +27,7 @@ const tracks = [
 
 const main = async() => {
   let grid = await monomeGrid(); // optionally pass in grid identifier
+  let l = new Led
   
   let led = [];
   let syncing = false
@@ -34,6 +36,9 @@ const main = async() => {
 
   let masterConfig = new MasterConfig(tracks, masterHz, syncing, syncTrack, noteValues, tracks[0])
   let currentTrack = masterConfig.currentTrack
+
+  l.buildGrid(currentTrack)
+  maxApi.post(l.grid)
 
   const initialize = async() => {
     led = create2DArray(16, 16)
@@ -104,6 +109,8 @@ const main = async() => {
           led = ledHandler(step, y, led, currentTrack)
           grid.refresh(led)
         }
+        l.buildGrid(currentTrack)
+        maxApi.post(l.grid)
       }
     });
   }
@@ -160,7 +167,6 @@ const main = async() => {
     masterConfig.masterHz = hz
     for (const track of tracks) {
       track.updateMsPerNote(masterConfig)
-      maxApi.post(track.msPerNote)
     }
   })
 
