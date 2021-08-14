@@ -69,6 +69,8 @@ const main = async() => {
         if (y === 0 && x < 6 && x !== currentTrack.track) {
           masterConfig.updateCurrentTrack(tracks[x])
           currentTrack = masterConfig.currentTrack
+          led = ledHandler(x, y, led, currentTrack)
+          grid.refresh(led)
           maxApi.outlet('changeTrack', x)
         } 
         //sync to masterTrack
@@ -87,7 +89,7 @@ const main = async() => {
         //slide on/off
         else if (y === 6 && step < currentTrack.upperLimit) {
           currentTrack = currentTrackHandler(step, y, currentTrack) 
-          led[y] = ledHandler(x, y, led, currentTrack)
+          led = ledHandler(x, y, led, currentTrack)
           grid.refresh(led)
         } 
         //note on/off
@@ -158,6 +160,7 @@ const main = async() => {
     masterConfig.masterHz = hz
     for (const track of tracks) {
       track.updateMsPerNote(masterConfig)
+      maxApi.post(track.msPerNote)
     }
   })
 

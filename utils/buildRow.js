@@ -47,7 +47,7 @@ const buildSlideRow = (currentTrack) => {
 
   const seq = currentTrack.sequence
   for (let x = pageStart; x < pageEnd; x++) {
-    seq[x].slide ? row.push(1) : row.push(0)
+    seq[x].on && seq[x].slide ? row.push(1) : row.push(0)
   }
   return row
 }
@@ -117,7 +117,7 @@ const buildPitchRows = (currentTrack) => {
       let row = []
       for (let x = pageStart; x < pageEnd; x++) {
         let yOffset = currentTrack.sequence[x].octave * 8
-        if (currentTrack.instrumentConfig.mapping[y + yOffset] && currentTrack.sequence[x].pitches[y + yOffset] === currentTrack.instrumentConfig.mapping[y + yOffset]) {
+        if (currentTrack.sequence[x].on && currentTrack.instrumentConfig.mapping[y + yOffset] && currentTrack.sequence[x].pitches[y + yOffset] === currentTrack.instrumentConfig.mapping[y + yOffset]) {
           row.push(1)
         } else {
           row.push(0)
@@ -132,7 +132,7 @@ const buildPitchRows = (currentTrack) => {
       for (let x = pageStart; x < pageEnd; x++) {
         let noteTranslated
         
-        if (currentTrack.sequence[x].pitch) {
+        if (currentTrack.sequence[x].on && currentTrack.sequence[x].pitch) {
           //if the selected note is the highest pitch, e.g. the octave
           const octaveNote = currentTrack.sequence[x].pitch === (((currentTrack.sequence[x].octave + 1) * 12) + currentTrack.rootNote)
           noteTranslated = octaveNote ? 7 : currentTrack.scale.indexOf((currentTrack.sequence[x].pitch - currentTrack.rootNote) % 12) 

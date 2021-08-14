@@ -31,7 +31,9 @@ const currentTrackHandler = (x, y, currentTrack) => {
       currentTrack.updateUpperLimit(x)
     }
   } else if (y === 6) {
+    maxApi.post('hi')
     currentTrack.updateStepSlide(x)
+    maxApi.post(currentTrack.msPerNote)
   } else if (y === 7) {
     currentTrack.updateStepOn(x)
   } else if (y > 7 && x < currentTrack.upperLimit) {
