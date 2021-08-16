@@ -95,6 +95,10 @@ class Led {
     else if (currentTrack.view === 2) {
       viewRows = this.buildVelocityRows(currentTrack)
     }
+    //if view is 'prob'
+    else if (currentTrack.view === 3) {
+      viewRows = this.buildProbRows(currentTrack)
+    }
 
     this.grid.splice(8, 8, ...viewRows)
   }
@@ -167,6 +171,7 @@ class Led {
     return rows
   }
 
+  //this and prob could be consolidated
   buildVelocityRows = currentTrack => {
     let rows = new Array(8)
     const [pageStart, pageEnd] = calculateLimits(currentTrack)
@@ -186,6 +191,28 @@ class Led {
     }
     return rows
   }
+
+  buildProbRows = currentTrack => {
+    let rows = new Array(8)
+    const [pageStart, pageEnd] = calculateLimits(currentTrack)
+    const seq = currentTrack.sequence
+
+    for (let y = 0; y < rows.length; y++) {
+      let row = []
+      for (let x = pageStart; x < pageStart + 16; x++) {
+        if (x < pageEnd && seq[x].on && y < seq[x].prob) {
+          row.push(1)
+        }
+        else {
+          row.push(0)
+        }
+      }
+      rows[rows.length - (y + 1)] = row
+    }
+    return rows
+  }
+
+
 
   buildGrid = currentTrack => {
     this.buildRow0(currentTrack)

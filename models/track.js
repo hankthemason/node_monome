@@ -1,5 +1,6 @@
 const { Step, PolyStep, MonoStep } = require('./step')
 const noteValues = require('../configurations/noteValues')
+const notePasses = require('../utils/notePasses.js')
 
 const MIDI_MAX = 127
 const VIEW_COLUMN_HEIGHT = 8
@@ -97,7 +98,16 @@ class Track {
     }
   }
 
-
+  updateStepProb = (x, y) => {
+    if (this.sequence[x].on) {
+      //turn off prob if prob is 1 and press 1
+      if (this.sequence[x].prob === 1 && y === 15) {
+        this.sequence[x].prob = 0
+      } else {
+        this.sequence[x].prob = 15 - (y - 1)
+      }
+    }
+  }
 }
 
 class PolyTrack extends Track {
@@ -128,6 +138,7 @@ class MonoTrack extends Track {
     if (note >= this.instrumentConfig.minNote && note <= this.instrumentConfig.maxNote) {
       this.sequence[step].pitch = note
       this.sequence[step].velocity = 8
+      this.sequence[step].prob = 8
     }
   }
 
@@ -146,8 +157,10 @@ class MonoTrack extends Track {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
+    //if prob < 8, calculate whether or not the note passes
+    let passNote = this.sequence[step].prob < 8 ? notePasses(this, step) : true
 
-    if (this.sequence[step].on) {
+    if (this.sequence[step].on && passNote) {
       return [this.sequence[step].pitch, velocity, msPerNote]
     } else {
       return [null, null]
@@ -174,10 +187,11 @@ class MappedTrack extends PolyTrack {
     if (this.sequence[step].pitches.includes(this.instrumentConfig.mapping[noteIdx])) {
       this.sequence[step].pitches[15 - y + yOffset] = null
     }
-    //otherwise turn note on and make velocity max (8)
+    //otherwise turn note on and make velocity, prob max (8)
     else {
       this.sequence[step].pitches[noteIdx] = this.instrumentConfig.mapping[noteIdx]
       this.sequence[step].velocity = 8
+      this.sequence[step].prob = 8
     }
   }
 
