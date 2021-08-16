@@ -291,7 +291,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
-					"outlettype" : [ "bang" ],
+					"outlettype" : [ "" ],
 					"patching_rect" : [ 139.0, 325.0, 70.0, 22.0 ],
 					"text" : "edgeDetect"
 				}
@@ -303,7 +303,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
-					"outlettype" : [ "bang" ],
+					"outlettype" : [ "" ],
 					"patching_rect" : [ 32.0, 325.0, 70.0, 22.0 ],
 					"text" : "edgeDetect"
 				}
@@ -545,8 +545,6 @@
 					"saved_object_attributes" : 					{
 						"autostart" : 0,
 						"defer" : 0,
-						"node_bin_path" : "",
-						"npm_bin_path" : "",
 						"watch" : 0
 					}
 ,
@@ -1014,13 +1012,6 @@
 				"bootpath" : "~/Code/Max/node_monome",
 				"patcherrelativepath" : ".",
 				"type" : "TEXT",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "edgeDetect.maxpat",
-				"bootpath" : "~/Documents/Max 8/Library/externals",
-				"patcherrelativepath" : "../../../Documents/Max 8/Library/externals",
-				"type" : "JSON",
 				"implicit" : 1
 			}
 , 			{

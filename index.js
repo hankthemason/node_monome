@@ -3,11 +3,11 @@ const monomeGrid = require('monome-grid')
 const create2DArray = require('./utils/create2DArray')
 const insertCol = require('./utils/insertCol')
 const calculateLimits = require('./utils/calculateLimits')
-const { buildRow, 
-        buildAllRows, 
-        buildViewRows, 
-        buildLengthSelectorRow,
-        refreshRows } = require('./utils/buildRow')
+const { buildRow,
+  buildAllRows,
+  buildViewRows,
+  buildLengthSelectorRow,
+  refreshRows } = require('./utils/buildRow')
 const { buildColumn, refreshColumnArea } = require('./utils/buildColumn')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const noteValues = require('./configurations/noteValues')
@@ -16,20 +16,19 @@ const { MonoTrack, MappedTrack } = require('./models/track')
 const MasterConfig = require('./models/masterConfig')
 const Led = require('./models/led')
 const { currentTrackHandler,
-        ledHandler,
-        syncOnHandler,
-        syncOffHandler} = require('./inputHandlers')
+  ledHandler,
+  syncOnHandler,
+  syncOffHandler } = require('./inputHandlers')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
   new MonoTrack(1, 4, sh101)
 ]
 
-const main = async() => {
+const main = async () => {
   let grid = await monomeGrid(); // optionally pass in grid identifier
-  let l = new Led
-  
-  let led = [];
+  let led = new Led
+
   let syncing = false
   let syncTrack
   let masterHz = 0.5
@@ -37,14 +36,12 @@ const main = async() => {
   let masterConfig = new MasterConfig(tracks, masterHz, syncing, syncTrack, noteValues, tracks[0])
   let currentTrack = masterConfig.currentTrack
 
-  l.buildGrid(currentTrack)
+  led.buildGrid(currentTrack)
 
-  const initialize = async() => {
-    led = create2DArray(16, 16)
+  const initialize = async () => {
     tracks[0].isMaster = true
 
-    led = buildAllRows(led, currentTrack)
-    grid.refresh(led)
+    grid.refresh(led.grid)
 
     //right now, we will set root notes to default middle C
     //later, make this configurable
@@ -64,7 +61,7 @@ const main = async() => {
       }
     }
   }
-  
+
   async function run() {
     grid.key((x, y, s) => {
       const step = x + (currentTrack.page * 16)
@@ -73,26 +70,24 @@ const main = async() => {
         if (y === 0 && x < 6 && x !== currentTrack.track) {
           masterConfig.updateCurrentTrack(tracks[x])
           currentTrack = masterConfig.currentTrack
-          l.buildGrid(currentTrack)
-          grid.refresh(l.grid)
+          led.buildGrid(currentTrack)
+          grid.refresh(led.grid)
           maxApi.outlet('changeTrack', x)
-        } 
+        }
         //sync to masterTrack
         else if (y === 1 && x === 7 && !currentTrack.isMaster) {
           masterConfig = syncOnHandler(masterConfig, currentTrack)
-          flicker(led, grid, masterConfig)
-        } 
+          flicker(grid, masterConfig)
+        }
         //this part of the grid is page-agnostic and can use x values
         else if (y < 6) {
           currentTrack = currentTrackHandler(x, y, currentTrack)
-          l.buildGrid(currentTrack)
-          led = l.grid
-          grid.refresh(led)
+          led.buildGrid(currentTrack)
+          grid.refresh(led.grid)
         } else if (y >= 6) {
           currentTrack = currentTrackHandler(step, y, currentTrack)
-          l.buildGrid(currentTrack)
-          led = l.grid
-          grid.refresh(led)
+          led.buildGrid(currentTrack)
+          grid.refresh(led.grid)
         }
         //here we start to use step value because these rows can point to 
         //steps in the sequence that are greater than 16
@@ -129,14 +124,14 @@ const main = async() => {
       currentTrack.step = 0
       masterConfig.syncing = false
       masterConfig.syncTrack = null
-      led[1][7] = 0
+      led.grid[1][7] = 0
     }
 
     const [notes, msPerNote] = t.getNotes(step)
     if (notes && notes.length > 1) {
       for (const note of notes) {
         maxApi.outlet('notes', track, note, msPerNote)
-      } 
+      }
     } else if (notes) {
       maxApi.outlet('note', track, notes, msPerNote)
     }
@@ -146,26 +141,23 @@ const main = async() => {
 
   maxApi.addHandler('playhead', (track) => {
     const t = currentTrack
-    let topRow = buildRow(0, t)
     let step = t.step//((t.step - 1) + t.upperLimit) % t.upperLimit
     //followMode off
     if (!t.followMode) {
       const [pageStart, pageEnd] = calculateLimits(t)
-      
+
       for (let x = pageStart; x < pageEnd; x++) {
-        if (step === x) { 
+        if (step === x) {
           for (let y = 8; y < 16; y++) {
-            led[y][x % 16] = 1
+            led.grid[y][x % 16] = 1
           }
         } else {
-          const col = buildColumn(x, currentTrack)
-          led = insertCol(led, col, x % 16)
+          led.buildColumn(x, currentTrack)
         }
       }
     }
 
-    led[0] = topRow
-    grid.refresh(led)
+    grid.refresh(led.grid)
   })
 
   maxApi.addHandler('masterHertz', (hz) => {
@@ -177,12 +169,11 @@ const main = async() => {
 
   maxApi.addHandler('stop', () => {
     for (var y = 8; y < 16; y++) {
-      led[y][currentTrack.step - 1] = 0
+      led.grid[y][currentTrack.step - 1] = 0
     }
 
-    led = buildAllRows(led, currentTrack)
-
-    grid.refresh(led)
+    led.buildGrid(currentTrack)
+    grid.refresh(led.grid)
 
     //default is to return tracks to 0
     //implement a mode to make this optional
@@ -191,13 +182,13 @@ const main = async() => {
     }
   })
 
-  const flicker = (led, grid, masterConfig) => {
+  const flicker = (grid, masterConfig) => {
     let flicker = 0
     const timer = setInterval(() => {
       if (masterConfig.syncing) {
-        led[1][7] = flicker ? 0 : 1
+        led.grid[1][7] = flicker ? 0 : 1
         flicker = !flicker
-        grid.refresh(led)
+        grid.refresh(led.grid)
       } else {
         clearInterval(timer)
       }

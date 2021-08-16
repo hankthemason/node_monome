@@ -16,11 +16,11 @@ const currentTrackHandler = (x, y, currentTrack) => {
         currentTrack.updatePage(x - 12)
       }
     }
-  } else if ( y === 1) {
+  } else if (y === 1) {
     //change currentTrack's view
     if (x < 5) {
       currentTrack.updateView(x)
-    } 
+    }
     else if (x > 11) {
       currentTrack.updateNumPages(x - 11)
     }
@@ -31,9 +31,7 @@ const currentTrackHandler = (x, y, currentTrack) => {
       currentTrack.updateUpperLimit(x)
     }
   } else if (y === 6) {
-    maxApi.post('hi')
     currentTrack.updateStepSlide(x)
-    maxApi.post(currentTrack.msPerNote)
   } else if (y === 7) {
     currentTrack.updateStepOn(x)
   } else if (y > 7 && x < currentTrack.upperLimit) {
@@ -46,7 +44,7 @@ const currentTrackHandler = (x, y, currentTrack) => {
       currentTrack.updateStepOctave(x, y)
     }
   }
-  
+
   return currentTrack
 }
 
