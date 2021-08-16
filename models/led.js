@@ -236,6 +236,10 @@ class Led {
     else if (currentTrack.view === 2) {
       this.buildVelocityColumn(x, currentTrack)
     }
+    //view is prob
+    else if (currentTrack.view === 3) {
+      this.buildProbColumn(x, currentTrack)
+    }
   }
 
   buildPitchColumn = (x, currentTrack) => {
@@ -295,6 +299,18 @@ class Led {
       }
     }
 
+    this.insertColumn(column, x)
+  }
+
+  buildProbColumn = (x, currentTrack) => {
+    let column = new Array(8).fill(0)
+    const seq = currentTrack.sequence
+
+    if (seq[x].on && x < currentTrack.upperLimit && seq[x].prob > 0) {
+      for (let y = 0; y < seq[x].prob; y++) {
+        column[column.length - (y + 1)] = 1
+      }
+    }
     this.insertColumn(column, x)
   }
 
