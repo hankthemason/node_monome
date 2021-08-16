@@ -140,8 +140,22 @@ const main = async () => {
 
       for (let x = pageStart; x < pageEnd; x++) {
         if (step === x) {
-          for (let y = 8; y < 16; y++) {
-            led.grid[y][x % 16] = 1
+          //these two views have a default full column appearance
+          //use a flicker on the playhead to make them easier to read
+          if (t.view === 2 || t.view === 3) {
+            if (t.sequence[step].velocity === 8 || t.sequence[step].prob === 8) {
+              for (let y = 8; y < 16; y++) {
+                led.grid[y][x % 16] = 0
+              }
+              grid.refresh(led.grid)
+            }
+            for (let y = 8; y < 16; y++) {
+              led.grid[y][x % 16] = 1
+            }
+          } else {
+            for (let y = 8; y < 16; y++) {
+              led.grid[y][x % 16] = 1
+            }
           }
         } else {
           led.buildColumn(x, currentTrack)
