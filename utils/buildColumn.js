@@ -62,7 +62,18 @@ const buildOctaveColumn = (x, currentTrack) => {
   return column
 }
 
+const buildVelocityColumn = (x, currentTrack) => {
+  let column = new Array(8).fill(0)
+  const seq = currentTrack.sequence
 
+  if (seq[x].on && x < currentTrack.upperLimit && seq[x].velocity > 0) {
+    for (let y = 0; y < seq[x].velocity; y++) {
+      column[y] = 1
+    }
+  }
+
+  return column
+}
 
 const refreshColumnArea = (led, xStart, currentTrack) => {
 
