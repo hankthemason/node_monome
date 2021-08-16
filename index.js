@@ -1,24 +1,13 @@
 const maxApi = require('max-api')
 const monomeGrid = require('monome-grid')
-const create2DArray = require('./utils/create2DArray')
-const insertCol = require('./utils/insertCol')
 const calculateLimits = require('./utils/calculateLimits')
-const { buildRow,
-  buildAllRows,
-  buildViewRows,
-  buildLengthSelectorRow,
-  refreshRows } = require('./utils/buildRow')
-const { buildColumn, refreshColumnArea } = require('./utils/buildColumn')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const noteValues = require('./configurations/noteValues')
 const scales = require('./configurations/scales')
 const { MonoTrack, MappedTrack } = require('./models/track')
 const MasterConfig = require('./models/masterConfig')
 const Led = require('./models/led')
-const { currentTrackHandler,
-  ledHandler,
-  syncOnHandler,
-  syncOffHandler } = require('./inputHandlers')
+const { currentTrackHandler, syncOnHandler } = require('./inputHandlers')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
@@ -127,13 +116,16 @@ const main = async () => {
       led.grid[1][7] = 0
     }
 
-    const [notes, msPerNote] = t.getNotes(step)
+    const [notes, velocity, msPerNote] = t.getNotes(step)
+    //poly
     if (notes && notes.length > 1) {
       for (const note of notes) {
-        maxApi.outlet('notes', track, note, msPerNote)
+        maxApi.outlet('notes', track, note, velocity, msPerNote)
       }
-    } else if (notes) {
-      maxApi.outlet('note', track, notes, msPerNote)
+    }
+    //mono
+    else if (notes) {
+      maxApi.outlet('note', track, notes, velocity, msPerNote)
     }
 
     t.incrementStep()

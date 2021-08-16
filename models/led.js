@@ -91,6 +91,10 @@ class Led {
     else if (currentTrack.view === 1) {
       viewRows = this.buildOctaveRows(currentTrack)
     }
+    //if view is 'velocity'
+    else if (currentTrack.view === 2) {
+      viewRows = this.buildVelocityRows(currentTrack)
+    }
 
     this.grid.splice(8, 8, ...viewRows)
   }
@@ -128,7 +132,6 @@ class Led {
             const octaveNote = currentTrack.sequence[x].pitch === (((currentTrack.sequence[x].octave + 1) * 12) + currentTrack.rootNote)
             noteTranslated = octaveNote ? 7 : currentTrack.scale.indexOf((currentTrack.sequence[x].pitch - currentTrack.rootNote) % 12)
           }
-
           if (noteTranslated >= 0 && y <= noteTranslated) {
             row.push(1)
           } else {
@@ -164,6 +167,26 @@ class Led {
     return rows
   }
 
+  buildVelocityRows = currentTrack => {
+    let rows = new Array(8)
+    const [pageStart, pageEnd] = calculateLimits(currentTrack)
+    const seq = currentTrack.sequence
+
+    for (let y = 0; y < rows.length; y++) {
+      let row = []
+      for (let x = pageStart; x < pageStart + 16; x++) {
+        if (x < pageEnd && seq[x].on && y < seq[x].velocity) {
+          row.push(1)
+        }
+        else {
+          row.push(0)
+        }
+      }
+      rows[rows.length - (y + 1)] = row
+    }
+    return rows
+  }
+
   buildGrid = currentTrack => {
     this.buildRow0(currentTrack)
     this.buildRow1(currentTrack)
@@ -181,6 +204,10 @@ class Led {
     //view is octave
     else if (currentTrack.view === 1) {
       this.buildOctaveColumn(x, currentTrack)
+    }
+    //view is velocity
+    else if (currentTrack.view === 2) {
+      this.buildVelocityColumn(x, currentTrack)
     }
   }
 
@@ -224,6 +251,19 @@ class Led {
 
     if (currentTrack.sequence[x].on && x < currentTrack.upperLimit) {
       for (let y = 0; y <= currentTrack.sequence[x].octave; y++) {
+        column[column.length - (y + 1)] = 1
+      }
+    }
+
+    this.insertColumn(column, x)
+  }
+
+  buildVelocityColumn = (x, currentTrack) => {
+    let column = new Array(8).fill(0)
+    const seq = currentTrack.sequence
+
+    if (seq[x].on && x < currentTrack.upperLimit && seq[x].velocity > 0) {
+      for (let y = 0; y < seq[x].velocity; y++) {
         column[column.length - (y + 1)] = 1
       }
     }

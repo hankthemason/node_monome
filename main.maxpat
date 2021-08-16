@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 34.0, 79.0, 851.0, 621.0 ],
+		"rect" : [ 70.0, 103.0, 991.0, 602.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -40,13 +40,49 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-29",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 439.0, 19.0, 67.0, 22.0 ],
+					"text" : "playhead 0"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-17",
+					"maxclass" : "number",
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "", "bang" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 265.5, 443.0, 50.0, 22.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-15",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 265.5, 476.0, 32.0, 22.0 ],
+					"text" : "$1 0"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-33",
 					"maxclass" : "newobj",
 					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "int", "float" ],
-					"patching_rect" : [ 460.0, 241.0, 60.0, 22.0 ],
-					"text" : "unpack i f"
+					"numoutlets" : 3,
+					"outlettype" : [ "int", "float", "float" ],
+					"patching_rect" : [ 436.0, 261.0, 67.0, 22.0 ],
+					"text" : "unpack i f f"
 				}
 
 			}
@@ -59,18 +95,6 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 187.0, 45.0, 32.0, 22.0 ],
 					"text" : "0.05"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-23",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 79.0, 501.0, 29.5, 22.0 ],
-					"text" : "36"
 				}
 
 			}
@@ -134,10 +158,10 @@
 					"id" : "obj-183",
 					"maxclass" : "newobj",
 					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "int", "int" ],
-					"patching_rect" : [ 198.0, 524.5, 59.0, 22.0 ],
-					"text" : "unpack i i"
+					"numoutlets" : 3,
+					"outlettype" : [ "int", "float", "int" ],
+					"patching_rect" : [ 216.0, 514.5, 66.0, 22.0 ],
+					"text" : "unpack i f i"
 				}
 
 			}
@@ -291,7 +315,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
-					"outlettype" : [ "" ],
+					"outlettype" : [ "bang" ],
 					"patching_rect" : [ 139.0, 325.0, 70.0, 22.0 ],
 					"text" : "edgeDetect"
 				}
@@ -303,7 +327,7 @@
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
-					"outlettype" : [ "" ],
+					"outlettype" : [ "bang" ],
 					"patching_rect" : [ 32.0, 325.0, 70.0, 22.0 ],
 					"text" : "edgeDetect"
 				}
@@ -545,6 +569,8 @@
 					"saved_object_attributes" : 					{
 						"autostart" : 0,
 						"defer" : 0,
+						"node_bin_path" : "",
+						"npm_bin_path" : "",
 						"watch" : 0
 					}
 ,
@@ -696,6 +722,13 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-183", 0 ],
+					"source" : [ "obj-15", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-173", 0 ],
 					"order" : 1,
 					"source" : [ "obj-167", 0 ]
@@ -756,6 +789,13 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-15", 0 ],
+					"source" : [ "obj-17", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-174", 0 ],
 					"order" : 1,
 					"source" : [ "obj-173", 1 ]
@@ -801,6 +841,13 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-35", 2 ],
+					"source" : [ "obj-183", 2 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-35", 1 ],
 					"source" : [ "obj-183", 1 ]
 				}
 
@@ -823,13 +870,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-31", 0 ],
 					"source" : [ "obj-184", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-184", 0 ],
-					"source" : [ "obj-23", 0 ]
 				}
 
 			}
@@ -866,6 +906,13 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-29", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-3", 0 ]
 				}
 
@@ -873,6 +920,13 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-184", 2 ],
+					"source" : [ "obj-33", 2 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-184", 1 ],
 					"source" : [ "obj-33", 1 ]
 				}
 
@@ -1012,6 +1066,13 @@
 				"bootpath" : "~/Code/Max/node_monome",
 				"patcherrelativepath" : ".",
 				"type" : "TEXT",
+				"implicit" : 1
+			}
+, 			{
+				"name" : "edgeDetect.maxpat",
+				"bootpath" : "~/Documents/Max 8/Library/Externals",
+				"patcherrelativepath" : "../../../Documents/Max 8/Library/Externals",
+				"type" : "JSON",
 				"implicit" : 1
 			}
 , 			{

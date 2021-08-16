@@ -42,6 +42,12 @@ const currentTrackHandler = (x, y, currentTrack) => {
       currentTrack.updateStepPitch(x, y)
     } else if (currentTrack.view === 1) {
       currentTrack.updateStepOctave(x, y)
+    } else if (currentTrack.view === 2) {
+      currentTrack.updateStepVelocity(x, y)
+    } else if (currentTrack.view === 3) {
+      currentTrack.updateStepProb(x, y)
+    } else if (currentTrack.view === 4) {
+      currentTrack.updatePitchProb(x, y)
     }
   }
 

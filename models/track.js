@@ -1,10 +1,14 @@
 const { Step, PolyStep, MonoStep } = require('./step')
 const noteValues = require('../configurations/noteValues')
 
+const MIDI_MAX = 127
+const VIEW_COLUMN_HEIGHT = 8
+const SCALAR = MIDI_MAX / VIEW_COLUMN_HEIGHT
+
 class Track {
   constructor(track, noteValue, instrumentConfig) {
     this.track = track,
-    this.noteValue = noteValue
+      this.noteValue = noteValue
     this.page = 0
     this.step = 0
     this.upperLimit = 16
@@ -87,7 +91,13 @@ class Track {
     }
   }
 
-  
+  updateStepVelocity = (x, y) => {
+    if (this.sequence[x].on) {
+      this.sequence[x].velocity = 15 - (y - 1)
+    }
+  }
+
+
 }
 
 class PolyTrack extends Track {
@@ -117,6 +127,7 @@ class MonoTrack extends Track {
     //check the input against the instrument's bounds
     if (note >= this.instrumentConfig.minNote && note <= this.instrumentConfig.maxNote) {
       this.sequence[step].pitch = note
+      this.sequence[step].velocity = 8
     }
   }
 
@@ -124,7 +135,7 @@ class MonoTrack extends Track {
     //this is the real # of possible octaves based on root note
     const calculatedOctaveSpan = Math.ceil((this.instrumentConfig.maxNote - this.rootNote) / 12)
     if ((15 - y) < calculatedOctaveSpan) {
-      const prevOctave = this.sequence[step].octave 
+      const prevOctave = this.sequence[step].octave
       this.sequence[step].octave = 15 - y
       const diff = Math.abs(prevOctave - this.sequence[step].octave)
       this.sequence[step].octave > prevOctave ? this.sequence[step].pitch += diff * 12 : this.sequence[step].pitch -= diff * 12
@@ -134,9 +145,10 @@ class MonoTrack extends Track {
   getNotes = step => {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
-    
+    const velocity = this.sequence[step].velocity * SCALAR
+
     if (this.sequence[step].on) {
-      return [this.sequence[step].pitch, msPerNote]
+      return [this.sequence[step].pitch, velocity, msPerNote]
     } else {
       return [null, null]
     }
@@ -155,16 +167,17 @@ class MappedTrack extends PolyTrack {
   }
 
   updateStepPitch = (step, y) => {
-    const yOffset = this.sequence[step].octave * 8 
+    const yOffset = this.sequence[step].octave * 8
     const noteIdx = (15 - y)
 
     //turn note off if already selected
     if (this.sequence[step].pitches.includes(this.instrumentConfig.mapping[noteIdx])) {
       this.sequence[step].pitches[15 - y + yOffset] = null
-    } 
-    //otherwise turn note on
+    }
+    //otherwise turn note on and make velocity max (8)
     else {
       this.sequence[step].pitches[noteIdx] = this.instrumentConfig.mapping[noteIdx]
+      this.sequence[step].velocity = 8
     }
   }
 
@@ -177,13 +190,14 @@ class MappedTrack extends PolyTrack {
   getNotes = step => {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
-    
+    const velocity = this.sequence[step].velocity * SCALAR
+
     if (this.sequence[step].on) {
       const notes = this.sequence[step].pitches
-      return [notes, msPerNote]
+      return [notes, velocity, msPerNote]
     } else {
       return [null, null]
-    } 
+    }
   }
 }
 
