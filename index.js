@@ -22,7 +22,9 @@ const main = async () => {
   let syncTrack
   let masterHz = 0.5
 
-  let masterConfig = new MasterConfig(tracks, masterHz, syncing, syncTrack, noteValues, tracks[0])
+  let copying = false
+
+  let masterConfig = new MasterConfig(tracks, masterHz, syncing, syncTrack, noteValues, tracks[0], copying)
   let currentTrack = masterConfig.currentTrack
 
   led.buildGrid(currentTrack)
@@ -66,7 +68,22 @@ const main = async () => {
         //sync to masterTrack
         else if (y === 1 && x === 7 && !currentTrack.isMaster) {
           masterConfig = syncOnHandler(masterConfig, currentTrack)
-          flicker(grid, masterConfig)
+          flicker(grid, masterConfig, x)
+        }
+        //copy/paste
+        else if (y === 1 && (x > 7 && x < 10)) {
+          currentTrack = currentTrackHandler(x, y, currentTrack)
+          //copy
+          if (x === 8) {
+            masterConfig.copying = true
+            flicker(grid, masterConfig, x)
+          }
+          //paste
+          else {
+            masterConfig.copying = false
+            led.buildGrid(currentTrack)
+            grid.refresh(led.grid)
+          }
         }
         //this part of the grid is page-agnostic and can use x values
         else if (y < 6) {
@@ -227,11 +244,11 @@ const main = async () => {
     }
   })
 
-  const flicker = (grid, masterConfig) => {
+  const flicker = (grid, masterConfig, x) => {
     let flicker = 0
     const timer = setInterval(() => {
-      if (masterConfig.syncing) {
-        led.grid[1][7] = flicker ? 0 : 1
+      if (masterConfig.syncing || masterConfig.copying) {
+        led.grid[1][x] = flicker ? 0 : 1
         flicker = !flicker
         grid.refresh(led.grid)
       } else {

@@ -1,14 +1,15 @@
 class MasterConfig {
-  constructor(tracks, masterHz, syncing, syncTrack, noteValues, currentTrack) {
+  constructor(tracks, masterHz, syncing, syncTrack, noteValues, currentTrack, copying) {
     this.tracks = tracks,
-    this.masterHz = masterHz,
-    this.syncing = syncing,
-    this.syncTrack = syncTrack,
-    this.noteValues = noteValues,
-    this.currentTrack = currentTrack
+      this.masterHz = masterHz,
+      this.syncing = syncing,
+      this.syncTrack = syncTrack,
+      this.noteValues = noteValues,
+      this.currentTrack = currentTrack
+    this.copying = copying
   }
 
-  updateCurrentTrack (newCurrentTrack) {
+  updateCurrentTrack(newCurrentTrack) {
     this.currentTrack = newCurrentTrack
   }
 }

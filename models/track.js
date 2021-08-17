@@ -24,6 +24,7 @@ class Track {
     this.scale = null
     this.msPerNote = null
     this.followMode = false
+    this.copyBuffer = []
 
     for (let x = 0; x < 64; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false)
