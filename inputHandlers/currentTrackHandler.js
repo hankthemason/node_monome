@@ -18,8 +18,12 @@ const currentTrackHandler = (x, y, currentTrack) => {
     }
   } else if (y === 1) {
     //change currentTrack's view
-    if (x < 5) {
+    if (x < 6) {
       currentTrack.updateView(x)
+    }
+    //toggle follow mode
+    else if (x === 6) {
+      currentTrack.followMode = !currentTrack.followMode
     }
     else if (x > 11) {
       currentTrack.updateNumPages(x - 11)

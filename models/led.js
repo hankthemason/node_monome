@@ -34,16 +34,11 @@ class Led {
   //views / numPages
   buildRow1 = currentTrack => {
     const rowIdx = 1
-    let row = []
-    for (let x = 0; x < 16; x++) {
-      if (currentTrack.view === x) {
-        row[x] = 1
-      } else if ((currentTrack.numPages + 11) === x) {
-        row[x] = 1
-      } else {
-        row[x] = 0
-      }
-    }
+    let row = new Array(16).fill(0)
+    row[currentTrack.view] = 1
+    row[6] = currentTrack.followMode ? 1 : 0
+    row[currentTrack.numPages + 11] = 1
+
     this.grid[rowIdx] = row
   }
 
@@ -300,7 +295,7 @@ class Led {
       }
     }
 
-    this.insertColumn(column, x)
+    this.insertColumn(column, x % 16)
   }
 
   buildOctaveColumn = (x, currentTrack) => {
@@ -312,7 +307,7 @@ class Led {
       }
     }
 
-    this.insertColumn(column, x)
+    this.insertColumn(column, x % 16)
   }
 
   buildVelocityColumn = (x, currentTrack) => {
@@ -325,7 +320,7 @@ class Led {
       }
     }
 
-    this.insertColumn(column, x)
+    this.insertColumn(column, x % 16)
   }
 
   buildProbColumn = (x, currentTrack) => {
@@ -337,7 +332,7 @@ class Led {
         column[column.length - (y + 1)] = 1
       }
     }
-    this.insertColumn(column, x)
+    this.insertColumn(column, x % 16)
   }
 
   buildPitchProbColumn = (x, currentTrack) => {
@@ -349,7 +344,7 @@ class Led {
         column[column.length - (y + 1)] = 1
       }
     }
-    this.insertColumn(column, x)
+    this.insertColumn(column, x % 16)
   }
 
   insertColumn = (col, x) => {

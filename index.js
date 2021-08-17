@@ -132,10 +132,11 @@ const main = async () => {
   })
 
   maxApi.addHandler('playhead', (track) => {
+
     const t = currentTrack
     let step = t.step//((t.step - 1) + t.upperLimit) % t.upperLimit
     //followMode off
-    if (!t.followMode) {
+    if (!t.followMode || t.numPages === 1) {
       const [pageStart, pageEnd] = calculateLimits(t)
 
       for (let x = pageStart; x < pageEnd; x++) {
@@ -161,6 +162,44 @@ const main = async () => {
           led.buildColumn(x, currentTrack)
         }
       }
+    } else {
+      let [pageStart, pageEnd] = calculateLimits(t)
+      if (step === pageEnd) {
+        t.page += 1;
+        [pageStart, pageEnd] = calculateLimits(t)
+        led.buildGrid(t)
+        grid.refresh(led.grid)
+      }
+      //modify this for different lengths
+      for (let x = pageStart; x < pageEnd; x++) {
+        if (step === x) {
+          //these two views have a default full column appearance
+          //use a flicker on the playhead to make them easier to read
+          if (t.view === 2 || t.view === 3) {
+            if (t.sequence[step].velocity === 8 || t.sequence[step].prob === 8) {
+              for (let y = 8; y < 16; y++) {
+                led.grid[y][x % 16] = 0
+              }
+              grid.refresh(led.grid)
+            }
+            for (let y = 8; y < 16; y++) {
+              led.grid[y][x % 16] = 1
+            }
+          } else {
+            for (let y = 8; y < 16; y++) {
+              led.grid[y][x % 16] = 1
+            }
+          }
+        } else {
+          led.buildColumn(x, currentTrack)
+        }
+      }
+
+      if (step === t.upperLimit - 1) {
+        t.page = 0
+        led.buildGrid(t)
+      }
+
     }
 
     grid.refresh(led.grid)

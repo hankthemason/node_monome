@@ -177,7 +177,6 @@ class MonoTrack extends Track {
 
     if (noteIsRandom) {
       randomNote = getRandomNote(this)
-      //console.log(randomNote)
     }
 
     if (this.sequence[step].on && passNote) {
