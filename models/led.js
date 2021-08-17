@@ -99,6 +99,10 @@ class Led {
     else if (currentTrack.view === 3) {
       viewRows = this.buildProbRows(currentTrack)
     }
+    //if view is 'pitchProb'
+    else if (currentTrack.view === 4) {
+      viewRows = this.buildPitchProbRows(currentTrack)
+    }
 
     this.grid.splice(8, 8, ...viewRows)
   }
@@ -212,7 +216,25 @@ class Led {
     return rows
   }
 
+  buildPitchProbRows = currentTrack => {
+    let rows = new Array(8)
+    const [pageStart, pageEnd] = calculateLimits(currentTrack)
+    const seq = currentTrack.sequence
 
+    for (let y = 0; y < rows.length; y++) {
+      let row = []
+      for (let x = pageStart; x < pageStart + 16; x++) {
+        if (x < pageEnd && seq[x].on && y < seq[x].pitchProb) {
+          row.push(1)
+        }
+        else {
+          row.push(0)
+        }
+      }
+      rows[rows.length - (y + 1)] = row
+    }
+    return rows
+  }
 
   buildGrid = currentTrack => {
     this.buildRow0(currentTrack)
@@ -239,6 +261,10 @@ class Led {
     //view is prob
     else if (currentTrack.view === 3) {
       this.buildProbColumn(x, currentTrack)
+    }
+    //view is pitchProb
+    else if (currentTrack.view === 4) {
+      this.buildPitchProbColumn(x, currentTrack)
     }
   }
 
@@ -308,6 +334,18 @@ class Led {
 
     if (seq[x].on && x < currentTrack.upperLimit && seq[x].prob > 0) {
       for (let y = 0; y < seq[x].prob; y++) {
+        column[column.length - (y + 1)] = 1
+      }
+    }
+    this.insertColumn(column, x)
+  }
+
+  buildPitchProbColumn = (x, currentTrack) => {
+    let column = new Array(8).fill(0)
+    const seq = currentTrack.sequence
+
+    if (seq[x].on && x < currentTrack.upperLimit && seq[x].pitchProb > 0) {
+      for (let y = 0; y < seq[x].pitchProb; y++) {
         column[column.length - (y + 1)] = 1
       }
     }

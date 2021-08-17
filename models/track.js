@@ -1,6 +1,7 @@
 const { Step, PolyStep, MonoStep } = require('./step')
 const noteValues = require('../configurations/noteValues')
 const notePasses = require('../utils/notePasses.js')
+const getRandomNote = require('../utils/getRandomNote')
 
 const MIDI_MAX = 127
 const VIEW_COLUMN_HEIGHT = 8
@@ -108,6 +109,17 @@ class Track {
       }
     }
   }
+
+  updatePitchProb = (x, y) => {
+    if (this.sequence[x].on) {
+      //turn off prob if prob is double clicked
+      if (this.sequence[x].pitchProb === 15 - y + 1) {
+        this.sequence[x].pitchProb = 0
+      } else {
+        this.sequence[x].pitchProb = 15 - (y - 1)
+      }
+    }
+  }
 }
 
 class PolyTrack extends Track {
@@ -158,10 +170,18 @@ class MonoTrack extends Track {
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
     //if prob < 8, calculate whether or not the note passes
-    let passNote = this.sequence[step].prob < 8 ? notePasses(this, step) : true
+    let passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
+    //use notePasses helper with pitchProb value to determine if we will get a new random pitch
+    let noteIsRandom = notePasses(this.sequence[step].pitchProb)
+    let randomNote
+
+    if (noteIsRandom) {
+      randomNote = getRandomNote(this)
+      //console.log(randomNote)
+    }
 
     if (this.sequence[step].on && passNote) {
-      return [this.sequence[step].pitch, velocity, msPerNote]
+      return [randomNote || this.sequence[step].pitch, velocity, msPerNote]
     } else {
       return [null, null]
     }
