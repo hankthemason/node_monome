@@ -2,6 +2,7 @@ const { Step, PolyStep, MonoStep } = require('./step')
 const noteValues = require('../configurations/noteValues')
 const notePasses = require('../utils/notePasses.js')
 const getRandomNote = require('../utils/getRandomNote')
+const maxApi = require('max-api')
 
 const MIDI_MAX = 127
 const VIEW_COLUMN_HEIGHT = 8
@@ -25,6 +26,7 @@ class Track {
     this.msPerNote = null
     this.followMode = false
     this.copyBuffer = []
+    this.syncedToUniversalNoteValue = false
 
     for (let x = 0; x < 64; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false)
@@ -41,6 +43,7 @@ class Track {
 
   updateNoteValue = (newNoteValue) => {
     this.noteValue = newNoteValue
+    maxApi.outlet('changeNoteValue', noteValues[this.noteValue].coeff, this.track)
   }
 
   updateMsPerNote = (masterConfig) => {

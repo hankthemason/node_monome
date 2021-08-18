@@ -8,6 +8,7 @@ const { MonoTrack, MappedTrack } = require('./models/track')
 const MasterConfig = require('./models/masterConfig')
 const Led = require('./models/led')
 const { currentTrackHandler, syncOnHandler } = require('./inputHandlers')
+const { isNull } = require('lodash')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
@@ -24,7 +25,7 @@ const main = async () => {
 
   let copying = false
 
-  let masterConfig = new MasterConfig(tracks, masterHz, syncing, syncTrack, noteValues, tracks[0], copying)
+  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false)
   let currentTrack = masterConfig.currentTrack
 
   led.buildGrid(currentTrack)
@@ -51,6 +52,7 @@ const main = async () => {
         tracks[i].scale = scales[1].scale
       }
     }
+    masterConfig.masterTrack = 0
   }
 
   async function run() {
@@ -64,6 +66,15 @@ const main = async () => {
           led.buildGrid(currentTrack)
           grid.refresh(led.grid)
           maxApi.outlet('changeTrack', x)
+        }
+        //change note value when universal sync is on 
+        else if (y === 0 && x > 5 && x < 12 && masterConfig.universalNoteValueOn) {
+          if (currentTrack.isMaster) {
+            currentTrack = currentTrackHandler(x, y, currentTrack)
+            tracks.filter(t => !t.isMaster).forEach(t => t.updateNoteValue(currentTrack.noteValue))
+          }
+          led.buildGrid(currentTrack)
+          grid.refresh(led.grid)
         }
         //sync to masterTrack
         else if (y === 1 && x === 7 && !currentTrack.isMaster) {
@@ -84,6 +95,29 @@ const main = async () => {
             led.buildGrid(currentTrack)
             grid.refresh(led.grid)
           }
+        }
+        //toggle universal note value
+        else if (y === 1 && x === 11) {
+          masterConfig.universalNoteValueOn = !masterConfig.universalNoteValueOn
+
+          tracks.forEach(t => {
+            t.syncedToUniversalNoteValue = masterConfig.universalNoteValueOn
+            if (t.syncedToUniversalNoteValue && !t.isMaster) {
+              t.updateNoteValue(tracks[masterConfig.masterTrack].noteValue)
+              t.step = tracks[masterConfig.masterTrack].step
+            }
+          })
+
+          led.buildGrid(currentTrack)
+          grid.refresh(led.grid)
+
+          // tracks.forEach(t => t.syncedToUniversalNoteValue = !t.syncedToUniversalNoteValue)
+          // masterConfig.universalNoteValueOn = !masterConfig.universalNoteValueOn
+          // if (masterConfig.universalNoteValueOn) {
+          //   tracks.forEach(t => t.noteValue = masterConfig.universalNoteValue)
+          // }
+          // led.buildGrid(currentTrack)
+          // grid.refresh(led.grid)
         }
         //this part of the grid is page-agnostic and can use x values
         else if (y < 6) {
