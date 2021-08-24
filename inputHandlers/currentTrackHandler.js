@@ -39,6 +39,9 @@ const currentTrackHandler = (x, y, currentTrack) => {
         currentTrack.copyBuffer = []
       }
     }
+    else if (x === 10 && currentTrack.poly) {
+      currentTrack.pitchViewCoupledToOctave = !currentTrack.pitchViewCoupledToOctave
+    }
     else if (x > 11) {
       currentTrack.updateNumPages(x - 11)
     }

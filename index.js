@@ -4,20 +4,20 @@ const calculateLimits = require('./utils/calculateLimits')
 const { er1, sh101, prophet12 } = require('./configurations/instrumentConfigs')
 const noteValues = require('./configurations/noteValues')
 const scales = require('./configurations/scales')
-const { MonoTrack, MappedTrack } = require('./models/track')
+const { MonoTrack, MappedTrack, ScalarPolyTrack } = require('./models/track')
 const MasterConfig = require('./models/masterConfig')
 const Led = require('./models/led')
 const { currentTrackHandler, syncOnHandler } = require('./inputHandlers')
-const { isNull } = require('lodash')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
-  new MonoTrack(1, 4, sh101)
+  new MonoTrack(1, 4, sh101),
+  new ScalarPolyTrack(2, 4, prophet12)
 ]
 
 const main = async () => {
   let grid = await monomeGrid(); // optionally pass in grid identifier
-  let led = new Led
+  let led = new Led()
 
   let syncing = false
   let syncTrack
@@ -35,23 +35,24 @@ const main = async () => {
 
     grid.refresh(led.grid)
 
-    //right now, we will set root notes to default middle C
-    //later, make this configurable
-    for (let i = 0; i < tracks.length; i++) {
-      //only for non-mapping tracks
-      if (!tracks[i].mapping) {
-        tracks[i].rootNote = 60
-      }
-    }
 
-    //right now, set scale to minor
-    //later, make this configurable
-    for (let i = 0; i < tracks.length; i++) {
+    tracks.forEach(track => {
+      //right now, we will set root notes to default middle C
+      //later, make this configurable
       //only for non-mapping tracks
-      if (!tracks[i].mapping) {
-        tracks[i].scale = scales[1].scale
+      if (!track.mapping) {
+        track.rootNote = 60
       }
-    }
+      //right now, set scale to minor
+      //later, make this configurable
+      //only for non-mapping tracks
+      if (!track.mapping) {
+        track.scale = scales[1].scale
+      }
+      //make sure that track ms values are intialized to masterHz
+      track.updateMsPerNote(masterConfig)
+    })
+
     masterConfig.masterTrack = 0
   }
 
@@ -68,10 +69,19 @@ const main = async () => {
           maxApi.outlet('changeTrack', x)
         }
         //change note value when universal sync is on 
-        else if (y === 0 && x > 5 && x < 12 && masterConfig.universalNoteValueOn) {
-          if (currentTrack.isMaster) {
+        else if (y === 0 && x > 5 && x < 12) {
+          if (masterConfig.universalNoteValueOn) {
+            if (currentTrack.isMaster) {
+              currentTrack = currentTrackHandler(x, y, currentTrack)
+              currentTrack.updateMsPerNote(masterConfig)
+              tracks.filter(t => !t.isMaster).forEach(t => {
+                t.updateNoteValue(currentTrack.noteValue)
+                t.updateMsPerNote(masterConfig)
+              })
+            }
+          } else {
             currentTrack = currentTrackHandler(x, y, currentTrack)
-            tracks.filter(t => !t.isMaster).forEach(t => t.updateNoteValue(currentTrack.noteValue))
+            currentTrack.updateMsPerNote(masterConfig)
           }
           led.buildGrid(currentTrack)
           grid.refresh(led.grid)
@@ -156,7 +166,7 @@ const main = async () => {
   }
 
   maxApi.addHandler('tick', (track) => {
-    let t = tracks[track]
+    const t = tracks[track]
     let step = t.step
 
     //connect the sync function to incoming ticks
@@ -169,13 +179,13 @@ const main = async () => {
 
     const [notes, velocity, msPerNote] = t.getNotes(step)
     //poly
-    if (notes && notes.length > 1) {
+    if (notes && t.poly) {
       for (const note of notes) {
         maxApi.outlet('notes', track, note, velocity, msPerNote)
       }
     }
     //mono
-    else if (notes) {
+    else {
       maxApi.outlet('note', track, notes, velocity, msPerNote)
     }
 

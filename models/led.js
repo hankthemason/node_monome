@@ -38,8 +38,8 @@ class Led {
     row[currentTrack.view] = 1
     row[6] = currentTrack.followMode ? 1 : 0
     row[currentTrack.numPages + 11] = 1
+    row[10] = currentTrack.poly && currentTrack.pitchViewCoupledToOctave ? 1 : 0
     row[11] = currentTrack.syncedToUniversalNoteValue ? 1 : 0
-
     this.grid[rowIdx] = row
   }
 
@@ -110,22 +110,46 @@ class Led {
     const seq = currentTrack.sequence
 
     //mapped instrument
-    if (currentTrack.instrumentConfig.mapping) {
-      for (let y = 0; y < 8; y++) {
-        let row = []
-        for (let x = pageStart; x < pageStart + 16; x++) {
-          let yOffset = currentTrack.sequence[x].octave * 8
-          if (x < pageEnd && seq[x].on && currentTrack.instrumentConfig.mapping[y + yOffset] && seq[x].pitches[y + yOffset] === currentTrack.instrumentConfig.mapping[y + yOffset]) {
-            row.push(1)
-          } else {
-            row.push(0)
+    if (currentTrack.poly) {
+      if (currentTrack.instrumentConfig.mapping) {
+        for (let y = 0; y < 8; y++) {
+          let row = []
+          for (let x = pageStart; x < pageStart + 16; x++) {
+            let yOffset = currentTrack.sequence[x].octave * 8
+            if (x < pageEnd && seq[x].on && currentTrack.instrumentConfig.mapping[y + yOffset] && seq[x].pitches[y + yOffset] === currentTrack.instrumentConfig.mapping[y + yOffset]) {
+              row.push(1)
+            } else {
+              row.push(0)
+            }
+          }
+          rows[rows.length - (y + 1)] = row
+        }
+      }
+      //scalar poly track
+      else {
+        if (currentTrack.pitchViewCoupledToOctave) {
+          //build rows starting from the bottom
+          for (let y = 0; y < 8; y++) {
+            let row = new Array(pageEnd - pageStart).fill(0)
+            for (let x = pageStart; x < pageStart + 16; x++) {
+              if (x < pageEnd && seq[x].on && seq[x].pitches.length) {
+                let noteTranslated
+                for (const pitch of seq[x].pitches) {
+                  const octaveNote = pitch === (((currentTrack.sequence[x].octave + 1) * 12) + currentTrack.rootNote)
+                  noteTranslated = octaveNote ? 7 : currentTrack.scale.indexOf((pitch - currentTrack.rootNote) % 12)
+                  if (noteTranslated === y) {
+                    row[x] = 1
+                  }
+                }
+              }
+            }
+            rows[rows.length - (y + 1)] = row
           }
         }
-        rows[rows.length - (y + 1)] = row
       }
     }
     //mono instrument
-    else if (!currentTrack.poly) {
+    else {
       //build rows from bottom up
       for (let y = 0; y < 8; y++) {
         let row = []
@@ -155,18 +179,17 @@ class Led {
     const seq = currentTrack.sequence
 
     //octave view for MappedTrack / MonoTrack
-    if (currentTrack.instrumentConfig.mapping || !currentTrack.poly) {
-      for (let y = 0; y < rows.length; y++) {
-        let row = []
-        for (let x = pageStart; x < pageStart + 16; x++) {
-          if (x < pageEnd && seq[x].on && y <= seq[x].octave) {
-            row.push(1)
-          } else {
-            row.push(0)
-          }
+    // if (currentTrack.instrumentConfig.mapping || !currentTrack.poly) {
+    for (let y = 0; y < rows.length; y++) {
+      let row = []
+      for (let x = pageStart; x < pageStart + 16; x++) {
+        if (x < pageEnd && seq[x].on && y <= seq[x].octave) {
+          row.push(1)
+        } else {
+          row.push(0)
         }
-        rows[rows.length - (y + 1)] = row
       }
+      rows[rows.length - (y + 1)] = row
     }
     return rows
   }
@@ -267,19 +290,33 @@ class Led {
   buildPitchColumn = (x, currentTrack) => {
     let column = new Array(8).fill(0)
 
-    const start = currentTrack.sequence[x].octave * 8
-
     if (currentTrack.sequence[x].on && x < currentTrack.upperLimit) {
-      //mappedTrack
-      if (currentTrack.instrumentConfig.mapping) {
-        for (let y = start; y < start + 8; y++) {
-          if (currentTrack.sequence[x].pitches[y]) {
-            column[column.length - ((y % 8) + 1)] = 1
+      if (currentTrack.poly) {
+        //mappedTrack
+        if (currentTrack.instrumentConfig.mapping) {
+          const start = currentTrack.sequence[x].octave * 8
+          for (let y = start; y < start + 8; y++) {
+            if (currentTrack.sequence[x].pitches[y]) {
+              column[column.length - ((y % 8) + 1)] = 1
+            }
+          }
+        } else {
+          if (currentTrack.pitchViewCoupledToOctave) {
+            let notesTranslated = new Map()
+            currentTrack.sequence[x].pitches.forEach(pitch => {
+              const octaveNote = pitch === (((currentTrack.sequence[x].octave + 1) * 12) + currentTrack.rootNote)
+              notesTranslated.set(octaveNote ? 7 : currentTrack.scale.indexOf((pitch - currentTrack.rootNote) % 12))
+            })
+            for (let y = 0; y < 8; y++) {
+              if (notesTranslated.has(y)) {
+                column[column.length - ((y % 8) + 1)] = 1
+              }
+            }
           }
         }
       }
       //monoTrack
-      else if (!currentTrack.poly) {
+      else {
         let noteTranslated
         if (currentTrack.sequence[x].pitch) {
           //if the selected note is the highest pitch, e.g. the octave

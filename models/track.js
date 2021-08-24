@@ -4,6 +4,7 @@ const notePasses = require('../utils/notePasses.js')
 const getRandomNote = require('../utils/getRandomNote')
 const maxApi = require('max-api')
 
+const UNIVERSAL_SEQ_LENGTH = 64
 const MIDI_MAX = 127
 const VIEW_COLUMN_HEIGHT = 8
 const SCALAR = MIDI_MAX / VIEW_COLUMN_HEIGHT
@@ -28,7 +29,7 @@ class Track {
     this.copyBuffer = []
     this.syncedToUniversalNoteValue = false
 
-    for (let x = 0; x < 64; x++) {
+    for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false)
     }
   }
@@ -130,6 +131,12 @@ class PolyTrack extends Track {
   constructor(track, noteValue, instrumentConfig) {
     super(track, noteValue, instrumentConfig)
     this.poly = true
+    //in the default view, pitch view is coupled to octave
+    //this means that the pitches you are viewing reflect the current selected octave for that step
+    //if you change the octave, the pitches change to reflect that
+    //if off, you can use octave to "jump around", 
+    //and the selected octave only reflects the octave that you are currently using to input notes
+    this.pitchViewCoupledToOctave = true
   }
 }
 
@@ -138,7 +145,7 @@ class MonoTrack extends Track {
     super(track, noteValue, instrumentConfig)
     this.poly = false
 
-    for (let x = 0; x < 64; x++) {
+    for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
       this.sequence[x] = new MonoStep(false, null, 0, 0, 0, 0, false)
     }
 
@@ -196,8 +203,9 @@ class MonoTrack extends Track {
 class MappedTrack extends PolyTrack {
   constructor(track, noteValue, instrumentConfig) {
     super(track, noteValue, instrumentConfig)
+    this.pitchViewCoupledToOctave = false
 
-    for (let x = 0; x < 64; x++) {
+    for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
       this.sequence[x] = new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, false)
     }
   }
@@ -248,14 +256,78 @@ class ScalarMonoTrack extends MonoTrack {
 }
 
 class ScalarPolyTrack extends PolyTrack {
-  constructor(track, noteValue) {
-    super(track, noteValue)
-    this.poly = true
+  constructor(track, noteValue, instrumentConfig) {
+    super(track, noteValue, instrumentConfig)
+
+    for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
+      this.sequence[x] = new PolyStep(false, [], 0, 0, 0, 0, false)
+    }
+  }
+
+
+  updateStepPitch = (step, y) => {
+    let stepObj = this.sequence[step]
+
+    if (this.pitchViewCoupledToOctave) {
+
+      const scalarIdx = 15 - y
+      let note = this.rootNote + this.scale[scalarIdx % 7] + (stepObj.octave * 12)
+
+      //allow for octaves to be input
+      if (y < 9) {
+        note += 12
+      }
+      //remove the note if it's already in the sequence
+      if (stepObj.pitches.includes(note)) {
+        let noteIdx = stepObj.pitches.indexOf(note)
+        stepObj.pitches.splice(noteIdx, 1)
+      }
+      //check the input against the instrument's bounds
+      else if (note >= this.instrumentConfig.minNote && note <= this.instrumentConfig.maxNote) {
+        //always map notes to their scalar index 
+        stepObj.pitches.push(note)
+        stepObj.velocity = 8
+        stepObj.prob = 8
+      }
+    }
+  }
+
+  updateStepOctave = (step, y) => {
+    let thisStep = this.sequence[step]
+
+    if (this.pitchViewCoupledToOctave) {
+      //this is the real # of possible octaves based on root note
+      const calculatedOctaveSpan = Math.ceil((this.instrumentConfig.maxNote - this.rootNote) / 12)
+      if ((15 - y) < calculatedOctaveSpan) {
+        const prevOctave = thisStep.octave
+        thisStep.octave = 15 - y
+        const diff = Math.abs(prevOctave - thisStep.octave)
+
+        thisStep.pitches = thisStep.pitches.map(pitch => {
+          thisStep.octave > prevOctave ? pitch += diff * 12 : pitch -= diff * 12
+          return pitch
+        })
+      }
+    }
+  }
+
+  getNotes = step => {
+    const ms = this.msPerNote
+    const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
+    const velocity = this.sequence[step].velocity * SCALAR
+
+    if (this.sequence[step].on && this.sequence[step].pitches.length) {
+      const notes = this.sequence[step].pitches
+      return [notes, velocity, msPerNote]
+    } else {
+      return [null, null]
+    }
   }
 }
 
 module.exports = {
   Track,
   MappedTrack,
-  MonoTrack
+  MonoTrack,
+  ScalarPolyTrack
 }
