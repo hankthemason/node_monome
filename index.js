@@ -35,7 +35,6 @@ const main = async () => {
 
     grid.refresh(led.grid)
 
-
     tracks.forEach(track => {
       //right now, we will set root notes to default middle C
       //later, make this configurable
@@ -134,9 +133,12 @@ const main = async () => {
           currentTrack = currentTrackHandler(x, y, currentTrack)
           led.buildGrid(currentTrack)
           grid.refresh(led.grid)
-        } else if (y >= 6) {
+        }
+        //for input in this area of the grid,
+        //we only need to update that specific column
+        else if (y >= 6) {
           currentTrack = currentTrackHandler(step, y, currentTrack)
-          led.buildGrid(currentTrack)
+          led.buildColumn(step, currentTrack)
           grid.refresh(led.grid)
         }
         //here we start to use step value because these rows can point to 

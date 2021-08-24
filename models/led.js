@@ -1,5 +1,8 @@
 const calculateLimits = require('../utils/calculateLimits')
 
+const VIEW_GRID_HEIGHT = 8
+const COLUMN_HEIGHT = 10
+
 class Led {
   constructor() {
     let rows = new Array(16)
@@ -288,28 +291,33 @@ class Led {
   }
 
   buildPitchColumn = (x, currentTrack) => {
-    let column = new Array(8).fill(0)
+    //column will read top to bottom
+    let column = new Array(COLUMN_HEIGHT).fill(0)
+    column = this.buildColumnTop(column, x, currentTrack)
 
     if (currentTrack.sequence[x].on && x < currentTrack.upperLimit) {
+
       if (currentTrack.poly) {
         //mappedTrack
         if (currentTrack.instrumentConfig.mapping) {
           const start = currentTrack.sequence[x].octave * 8
-          for (let y = start; y < start + 8; y++) {
+          for (let y = start; y < start + VIEW_GRID_HEIGHT; y++) {
             if (currentTrack.sequence[x].pitches[y]) {
-              column[column.length - ((y % 8) + 1)] = 1
+              column[column.length - ((y % column.length) + 1)] = 1
             }
           }
-        } else {
+        }
+        //scalar polyTrack
+        else {
           if (currentTrack.pitchViewCoupledToOctave) {
             let notesTranslated = new Map()
             currentTrack.sequence[x].pitches.forEach(pitch => {
               const octaveNote = pitch === (((currentTrack.sequence[x].octave + 1) * 12) + currentTrack.rootNote)
               notesTranslated.set(octaveNote ? 7 : currentTrack.scale.indexOf((pitch - currentTrack.rootNote) % 12))
             })
-            for (let y = 0; y < 8; y++) {
+            for (let y = 0; y < VIEW_GRID_HEIGHT; y++) {
               if (notesTranslated.has(y)) {
-                column[column.length - ((y % 8) + 1)] = 1
+                column[column.length - ((y % column.length) + 1)] = 1
               }
             }
           }
@@ -337,7 +345,8 @@ class Led {
   }
 
   buildOctaveColumn = (x, currentTrack) => {
-    let column = new Array(8).fill(0)
+    let column = new Array(COLUMN_HEIGHT).fill(0)
+    column = this.buildColumnTop(column, x, currentTrack)
 
     if (currentTrack.sequence[x].on && x < currentTrack.upperLimit) {
       for (let y = 0; y <= currentTrack.sequence[x].octave; y++) {
@@ -349,7 +358,8 @@ class Led {
   }
 
   buildVelocityColumn = (x, currentTrack) => {
-    let column = new Array(8).fill(0)
+    let column = new Array(COLUMN_HEIGHT).fill(0)
+    column = this.buildColumnTop(column, x, currentTrack)
     const seq = currentTrack.sequence
 
     if (seq[x].on && x < currentTrack.upperLimit && seq[x].velocity > 0) {
@@ -362,7 +372,8 @@ class Led {
   }
 
   buildProbColumn = (x, currentTrack) => {
-    let column = new Array(8).fill(0)
+    let column = new Array(COLUMN_HEIGHT).fill(0)
+    column = this.buildColumnTop(column, x, currentTrack)
     const seq = currentTrack.sequence
 
     if (seq[x].on && x < currentTrack.upperLimit && seq[x].prob > 0) {
@@ -374,7 +385,8 @@ class Led {
   }
 
   buildPitchProbColumn = (x, currentTrack) => {
-    let column = new Array(8).fill(0)
+    let column = new Array(COLUMN_HEIGHT).fill(0)
+    column = this.buildColumnTop(column, x, currentTrack)
     const seq = currentTrack.sequence
 
     if (seq[x].on && x < currentTrack.upperLimit && seq[x].pitchProb > 0) {
@@ -386,9 +398,18 @@ class Led {
   }
 
   insertColumn = (col, x) => {
-    for (let y = 8; y < 16; y++) {
-      this.grid[y][x] = col[y - 8]
+    //columns start at 6
+    const columnStart = 6
+    const columnEnd = 16
+    for (let y = columnStart; y < columnEnd; y++) {
+      this.grid[y][x] = col[y - columnStart]
     }
+  }
+
+  buildColumnTop = (col, x, currentTrack) => {
+    col[1] = currentTrack.sequence[x].on ? 1 : 0
+    col[0] = currentTrack.sequence[x].slide ? 1 : 0
+    return col
   }
 }
 
