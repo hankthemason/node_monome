@@ -408,7 +408,7 @@ class Led {
 
   buildColumnTop = (col, x, currentTrack) => {
     col[1] = currentTrack.sequence[x].on ? 1 : 0
-    col[0] = currentTrack.sequence[x].slide ? 1 : 0
+    col[0] = currentTrack.sequence[x].slide && currentTrack.sequence[x].on ? 1 : 0
     return col
   }
 }
