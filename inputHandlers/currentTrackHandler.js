@@ -1,7 +1,4 @@
-const maxApi = require('max-api')
 const calculateLimits = require('../utils/calculateLimits')
-const noteValues = require('../configurations/noteValues')
-const { MonoStep, PolyStep } = require('../models/step')
 const _ = require('lodash')
 
 const currentTrackHandler = (x, y, currentTrack) => {
@@ -51,6 +48,8 @@ const currentTrackHandler = (x, y, currentTrack) => {
     if (x + 1 !== pageEnd % 16) {
       currentTrack.updateUpperLimit(x)
     }
+  } else if (y === 5) {
+    currentTrack.updateNoteRepeat(x)
   } else if (y === 6) {
     currentTrack.updateStepSlide(x)
   } else if (y === 7) {

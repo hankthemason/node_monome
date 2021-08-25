@@ -30,7 +30,7 @@ class Track {
     this.syncedToUniversalNoteValue = false
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
-      this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false)
+      this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false, false)
     }
   }
 
@@ -80,6 +80,10 @@ class Track {
 
   updateStepOn = (step) => {
     this.sequence[step].on = !this.sequence[step].on
+  }
+
+  updateNoteRepeat = step => {
+    this.sequence[step].noteRepeat = !this.sequence[step].noteRepeat
   }
 
   updateNumPages = (newNumPages) => {
@@ -146,7 +150,7 @@ class MonoTrack extends Track {
     this.poly = false
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
-      this.sequence[x] = new MonoStep(false, null, 0, 0, 0, 0, false)
+      this.sequence[x] = new MonoStep(false, null, 0, 0, 0, 0, false, false)
     }
 
   }
@@ -206,7 +210,7 @@ class MappedTrack extends PolyTrack {
     this.pitchViewCoupledToOctave = false
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
-      this.sequence[x] = new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, false)
+      this.sequence[x] = new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, false, false)
     }
   }
 
@@ -260,7 +264,7 @@ class ScalarPolyTrack extends PolyTrack {
     super(track, noteValue, instrumentConfig)
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
-      this.sequence[x] = new PolyStep(false, [], 0, 0, 0, 0, false)
+      this.sequence[x] = new PolyStep(false, [], 0, 0, 0, 0, false, false)
     }
   }
 

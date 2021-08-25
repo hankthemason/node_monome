@@ -1,7 +1,7 @@
 const calculateLimits = require('../utils/calculateLimits')
 
 const VIEW_GRID_HEIGHT = 8
-const COLUMN_HEIGHT = 10
+const COLUMN_HEIGHT = 11
 
 class Led {
   constructor() {
@@ -52,6 +52,18 @@ class Led {
     const [pageStart, pageEnd] = calculateLimits(currentTrack)
     for (let x = pageStart; x < pageStart + 16; x++) {
       row[x % 16] = x < pageEnd ? 1 : 0
+    }
+    this.grid[rowIdx] = row
+  }
+
+  buildNoteRepeatRow = currentTrack => {
+    const rowIdx = 5
+    let row = []
+    const [pageStart, pageEnd] = calculateLimits(currentTrack)
+
+    const seq = currentTrack.sequence
+    for (let x = pageStart; x < pageStart + 16; x++) {
+      row[x % 16] = x < pageEnd && seq[x].on && seq[x].noteRepeat ? 1 : 0
     }
     this.grid[rowIdx] = row
   }
@@ -262,6 +274,7 @@ class Led {
     this.buildRow0(currentTrack)
     this.buildRow1(currentTrack)
     this.buildLengthSelectorRow(currentTrack)
+    this.buildNoteRepeatRow(currentTrack)
     this.buildSlideRow(currentTrack)
     this.buildNoteOnRow(currentTrack)
     this.buildViewRows(currentTrack)
@@ -398,8 +411,8 @@ class Led {
   }
 
   insertColumn = (col, x) => {
-    //columns start at 6
-    const columnStart = 6
+    //columns start at row 5
+    const columnStart = 5
     const columnEnd = 16
     for (let y = columnStart; y < columnEnd; y++) {
       this.grid[y][x] = col[y - columnStart]
@@ -407,8 +420,9 @@ class Led {
   }
 
   buildColumnTop = (col, x, currentTrack) => {
-    col[1] = currentTrack.sequence[x].on ? 1 : 0
-    col[0] = currentTrack.sequence[x].slide && currentTrack.sequence[x].on ? 1 : 0
+    col[2] = currentTrack.sequence[x].on ? 1 : 0
+    col[1] = currentTrack.sequence[x].slide && currentTrack.sequence[x].on ? 1 : 0
+    col[0] = currentTrack.sequence[x].noteRepeat && currentTrack.sequence[x].on ? 1 : 0
     return col
   }
 }

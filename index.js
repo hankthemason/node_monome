@@ -136,7 +136,7 @@ const main = async () => {
         }
         //for input in this area of the grid,
         //we only need to update that specific column
-        else if (y >= 6) {
+        else if (y >= 5) {
           currentTrack = currentTrackHandler(step, y, currentTrack)
           led.buildColumn(step, currentTrack)
           grid.refresh(led.grid)
