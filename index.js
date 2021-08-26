@@ -25,7 +25,7 @@ const main = async () => {
 
   let copying = false
 
-  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false)
+  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false, false)
   let currentTrack = masterConfig.currentTrack
 
   led.buildGrid(currentTrack)
@@ -180,9 +180,13 @@ const main = async () => {
     }
 
     const [notes, velocity, msPerNote, noteRepeat] = t.getNotes(step)
+    let masterBeat
+    if (t.isMaster) {
+      masterBeat = t.step % 2
+    }
     //poly
     if (notes && t.poly) {
-      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat)
+      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat, masterBeat)
       // for (const note of notes) {
       //   maxApi.outlet('notes', track, note, velocity, msPerNote, noteRepeat)
       // }
@@ -289,6 +293,10 @@ const main = async () => {
     for (let i = 0; i < tracks.length; i++) {
       tracks[i].step = 0;
     }
+  })
+
+  maxApi.addHandler('swing', int => {
+    masterConfig.swing = int === 1 ? true : false
   })
 
   const flicker = (grid, masterConfig, x) => {
