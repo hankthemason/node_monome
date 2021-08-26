@@ -150,7 +150,7 @@ class MonoTrack extends Track {
     this.poly = false
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
-      this.sequence[x] = new MonoStep(false, null, 0, 0, 0, 0, false, false)
+      this.sequence[x] = new MonoStep(false, 0, 0, 0, 0, 0, false, false)
     }
 
   }
@@ -188,14 +188,14 @@ class MonoTrack extends Track {
     let passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
     //use notePasses helper with pitchProb value to determine if we will get a new random pitch
     let noteIsRandom = notePasses(this.sequence[step].pitchProb)
-    let randomNote
+    let randomNote = null
 
     if (noteIsRandom) {
       randomNote = getRandomNote(this)
     }
 
     if (this.sequence[step].on && passNote) {
-      return [randomNote || this.sequence[step].pitch, velocity, msPerNote]
+      return [randomNote || this.sequence[step].pitch, velocity, msPerNote, this.sequence[step].noteRepeat]
     } else {
       return [null, null]
     }
@@ -240,10 +240,11 @@ class MappedTrack extends PolyTrack {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
+    const noteRepeat = this.sequence[step].noteRepeat
 
     if (this.sequence[step].on) {
-      const notes = this.sequence[step].pitches
-      return [notes, velocity, msPerNote]
+      const notes = this.sequence[step].pitches.filter(pitch => pitch !== null && pitch !== undefined)
+      return [notes, velocity, msPerNote, noteRepeat]
     } else {
       return [null, null]
     }
@@ -319,15 +320,16 @@ class ScalarPolyTrack extends PolyTrack {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
+    const noteRepeat = this.sequence[step].noteRepeat
     //if prob < 8, calculate whether or not the note passes
     const passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
     //use notePasses helper with pitchProb value to determine if we will get a new random pitch
     const notesAreRandom = notePasses(this.sequence[step].pitchProb)
 
-    const pitches = notesAreRandom ? getRandomNotes(this) : this.sequence[step].pitches
+    const pitches = notesAreRandom ? getRandomNotes(this) : this.sequence[step].pitches.filter(pitch => pitch >= 0)
 
     if (this.sequence[step].on && this.sequence[step].pitches.length) {
-      return [pitches, velocity, msPerNote]
+      return [pitches, velocity, msPerNote, noteRepeat]
     } else {
       return [null, null]
     }

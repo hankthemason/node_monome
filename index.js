@@ -129,7 +129,7 @@ const main = async () => {
           // grid.refresh(led.grid)
         }
         //this part of the grid is page-agnostic and can use x values
-        else if (y < 6) {
+        else if (y < 5) {
           currentTrack = currentTrackHandler(x, y, currentTrack)
           led.buildGrid(currentTrack)
           grid.refresh(led.grid)
@@ -179,16 +179,17 @@ const main = async () => {
       led.grid[1][7] = 0
     }
 
-    const [notes, velocity, msPerNote] = t.getNotes(step)
+    const [notes, velocity, msPerNote, noteRepeat] = t.getNotes(step)
     //poly
     if (notes && t.poly) {
-      for (const note of notes) {
-        maxApi.outlet('notes', track, note, velocity, msPerNote)
-      }
+      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat)
+      // for (const note of notes) {
+      //   maxApi.outlet('notes', track, note, velocity, msPerNote, noteRepeat)
+      // }
     }
     //mono
     else {
-      maxApi.outlet('note', track, notes, velocity, msPerNote)
+      maxApi.outlet('note', track, notes, velocity, msPerNote, noteRepeat)
     }
 
     t.incrementStep()

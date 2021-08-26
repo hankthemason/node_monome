@@ -1,12 +1,12 @@
 class Step {
-  constructor(on, pitch, velocity, octave, prob, pitchProb, slide, noteRepeat) {
-    this.on = on,
-      this.velocity = velocity,
-      this.octave = octave,
-      this.prob = prob,
-      this.pitchProb = pitchProb,
-      this.slide = slide,
-      this.noteRepeat = noteRepeat
+  constructor(on, velocity, octave, prob, pitchProb, slide, noteRepeat) {
+    this.on = on;
+    this.velocity = velocity;
+    this.octave = octave;
+    this.prob = prob;
+    this.pitchProb = pitchProb;
+    this.slide = slide;
+    this.noteRepeat = noteRepeat;
   }
 }
 
