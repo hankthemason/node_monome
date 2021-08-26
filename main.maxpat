@@ -40,17 +40,6 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
-					"id" : "obj-87",
-					"maxclass" : "newobj",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 1049.0, 376.0, 32.0, 22.0 ],
-					"text" : "print"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-86",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -140,8 +129,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 460.0, 290.0, 69.0, 22.0 ],
-					"text" : "repeatGate"
+					"patching_rect" : [ 422.0, 331.0, 95.0, 22.0 ],
+					"text" : "polyNoteRepeat"
 				}
 
 			}
@@ -1377,6 +1366,8 @@
 					"saved_object_attributes" : 					{
 						"autostart" : 0,
 						"defer" : 0,
+						"node_bin_path" : "",
+						"npm_bin_path" : "",
 						"watch" : 0
 					}
 ,
@@ -1549,7 +1540,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-44", 0 ],
+					"destination" : [ "obj-44", 1 ],
 					"order" : 1,
 					"source" : [ "obj-139", 0 ]
 				}
@@ -2093,13 +2084,6 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-87", 0 ],
-					"source" : [ "obj-73", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-78", 2 ],
 					"source" : [ "obj-81", 0 ]
 				}
@@ -2130,15 +2114,15 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-41", 1 ],
-					"order" : 1,
+					"order" : 0,
 					"source" : [ "obj-9", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-44", 1 ],
-					"order" : 0,
+					"destination" : [ "obj-44", 0 ],
+					"order" : 1,
 					"source" : [ "obj-9", 0 ]
 				}
 
@@ -2239,7 +2223,7 @@
 				"implicit" : 1
 			}
 , 			{
-				"name" : "repeatGate.maxpat",
+				"name" : "polyNoteRepeat.maxpat",
 				"bootpath" : "~/Code/Max/node_monome",
 				"patcherrelativepath" : ".",
 				"type" : "JSON",
