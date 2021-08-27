@@ -25,7 +25,7 @@ const main = async () => {
 
   let copying = false
 
-  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false, false)
+  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false, false, 0)
   let currentTrack = masterConfig.currentTrack
 
   led.buildGrid(currentTrack)
@@ -141,28 +141,6 @@ const main = async () => {
           led.buildColumn(step, currentTrack)
           grid.refresh(led.grid)
         }
-        //here we start to use step value because these rows can point to 
-        //steps in the sequence that are greater than 16
-        //slide on/off
-        // else if (y === 6 && step < currentTrack.upperLimit) {
-        //   currentTrack = currentTrackHandler(step, y, currentTrack) 
-        //   led = ledHandler(x, y, led, currentTrack)
-        //   grid.refresh(led)
-        // } 
-        // //note on/off
-        // else if (y === 7 && step < currentTrack.upperLimit) {
-        //   currentTrack = currentTrackHandler(step, y, currentTrack)
-        //   led = ledHandler(step, y, led, currentTrack)
-        //   grid.refresh(led)
-        // } 
-        // //view input (pitch, vel, prob, pitchProb, or unknown)
-        // else if (y > 7 && step < currentTrack.upperLimit) {
-        //   currentTrack = currentTrackHandler(step, y, currentTrack)
-        //   led = ledHandler(step, y, led, currentTrack)
-        //   grid.refresh(led)
-        // }
-        // l.buildGrid(currentTrack)
-        // maxApi.post(l.grid)
       }
     });
   }
@@ -180,16 +158,13 @@ const main = async () => {
     }
 
     const [notes, velocity, msPerNote, noteRepeat] = t.getNotes(step)
-    let masterBeat
-    if (t.isMaster) {
-      masterBeat = t.step % 2
+    let delayOn = 0
+    if (masterConfig.swing) {
+      delayOn = ((tracks[masterConfig.masterTrack].step + 1) % 2) !== 0 ? 0 : 1
     }
     //poly
     if (notes && t.poly) {
-      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat, masterBeat)
-      // for (const note of notes) {
-      //   maxApi.outlet('notes', track, note, velocity, msPerNote, noteRepeat)
-      // }
+      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat, delayOn)
     }
     //mono
     else {
@@ -297,6 +272,13 @@ const main = async () => {
 
   maxApi.addHandler('swing', int => {
     masterConfig.swing = int === 1 ? true : false
+  })
+
+  maxApi.addHandler('swingAmount', pctSwing => {
+    masterConfig.swingAmount = pctSwing
+    const masterMsPerNote = tracks[masterConfig.masterTrack].msPerNote
+    const delayTime = masterMsPerNote * pctSwing
+    maxApi.outlet('delayTime', delayTime)
   })
 
   const flicker = (grid, masterConfig, x) => {
