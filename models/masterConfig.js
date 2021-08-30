@@ -1,5 +1,5 @@
 class MasterConfig {
-  constructor(tracks, masterTrack, masterHz, syncing, syncTrack, noteValues, currentTrack, copying, universalNoteValueOn, swing, swingAmount) {
+  constructor(tracks, masterTrack, masterHz, syncing, syncTrack, noteValues, currentTrack, copying, universalNoteValueOn, swing, swingAmount, delayOn) {
     this.tracks = tracks;
     this.masterTrack = masterTrack;
     this.masterHz = masterHz;
@@ -11,6 +11,7 @@ class MasterConfig {
     this.universalNoteValueOn = universalNoteValueOn;
     this.swing = swing;
     this.swingAmount = swingAmount;
+    this.delayOn = delayOn;
   }
 
   updateCurrentTrack(newCurrentTrack) {

@@ -24,8 +24,9 @@ const main = async () => {
   let masterHz = 0.5
 
   let copying = false
+  let delayOn = 0
 
-  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false, false, 0)
+  let masterConfig = new MasterConfig(tracks, null, masterHz, syncing, syncTrack, noteValues, tracks[0], copying, false, false, 0, delayOn)
   let currentTrack = masterConfig.currentTrack
 
   led.buildGrid(currentTrack)
@@ -158,17 +159,16 @@ const main = async () => {
     }
 
     const [notes, velocity, msPerNote, noteRepeat] = t.getNotes(step)
-    let delayOn = 0
-    if (masterConfig.swing) {
-      delayOn = ((tracks[masterConfig.masterTrack].step + 1) % 2) !== 0 ? 0 : 1
+    if (masterConfig.swing && t.isMaster) {
+      masterConfig.delayOn = ((tracks[masterConfig.masterTrack].step + 1) % 2) !== 0 ? 0 : 1
     }
     //poly
     if (notes && t.poly) {
-      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat, delayOn)
+      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat, masterConfig.delayOn)
     }
     //mono
-    else {
-      maxApi.outlet('note', track, notes, velocity, msPerNote, noteRepeat)
+    else if (notes && !notes.poly) {
+      maxApi.outlet('note', track, notes, velocity, msPerNote, noteRepeat, masterConfig.delayOn)
     }
 
     t.incrementStep()
@@ -177,7 +177,9 @@ const main = async () => {
   maxApi.addHandler('playhead', (track) => {
 
     const t = currentTrack
-    let step = t.step//((t.step - 1) + t.upperLimit) % t.upperLimit
+    //unfortunately, the playhead is subject to weird max scheduling stuff and depending on where 
+    //the playhead parts of the patch are, we might need to implement workarounds like this to make it work.
+    let step = ((t.step - 1) + t.upperLimit) % t.upperLimit //t.step
     //followMode off
     if (!t.followMode || t.numPages === 1) {
       const [pageStart, pageEnd] = calculateLimits(t)

@@ -40,7 +40,20 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
-					"comment" : "",
+					"fontsize" : 10.0,
+					"id" : "obj-4",
+					"linecount" : 2,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 146.0, 61.0, 126.0, 29.0 ],
+					"text" : "seq on/off (open/close gate)"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"comment" : "seq on/off (open/close gate)",
 					"id" : "obj-2",
 					"index" : 2,
 					"maxclass" : "inlet",
@@ -60,7 +73,7 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 153.0, 61.0, 30.0, 30.0 ]
+					"patching_rect" : [ 306.0, 61.0, 30.0, 30.0 ]
 				}
 
 			}
@@ -97,7 +110,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 82.0, 252.0, 70.0, 22.0 ],
-					"text" : "2"
+					"text" : "5"
 				}
 
 			}
