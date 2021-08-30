@@ -58,8 +58,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 210.5, 206.041138000000046, 50.0, 35.0 ],
-					"text" : "36 38 42"
+					"patching_rect" : [ 97.0, 227.041138000000046, 20.0, 35.0 ],
+					"text" : "68"
 				}
 
 			}
@@ -118,7 +118,7 @@
 					"numinlets" : 4,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 59.0, 246.041138000000046, 95.0, 22.0 ],
+					"patching_rect" : [ 83.0, 282.041138000000046, 95.0, 22.0 ],
 					"text" : "polyNoteRepeat"
 				}
 

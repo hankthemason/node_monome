@@ -1,5 +1,6 @@
 const calculateLimits = require('../utils/calculateLimits')
 const _ = require('lodash')
+const getNoteFromY = require('../utils/getNoteFromY')
 
 const currentTrackHandler = (x, y, currentTrack) => {
   if (y === 0) {
@@ -36,8 +37,8 @@ const currentTrackHandler = (x, y, currentTrack) => {
         currentTrack.copyBuffer = []
       }
     }
-    else if (x === 10 && currentTrack.poly) {
-      currentTrack.pitchViewCoupledToOctave = !currentTrack.pitchViewCoupledToOctave
+    else if (x === 10) {
+      currentTrack.updateNoteEffectType()
     }
     else if (x > 11) {
       currentTrack.updateNumPages(x - 11)
@@ -49,17 +50,38 @@ const currentTrackHandler = (x, y, currentTrack) => {
       currentTrack.updateUpperLimit(x)
     }
   } else if (y === 5) {
-    currentTrack.updateNoteRepeat(x)
+    currentTrack.updateNoteEffect(x)
   } else if (y === 6) {
     currentTrack.updateStepSlide(x)
   } else if (y === 7) {
     currentTrack.updateStepOn(x)
   } else if (y > 7 && x < currentTrack.upperLimit) {
+    //this one is complicated 
     if (currentTrack.view === 0) {
+      //a note press turns the step on
       if (!currentTrack.sequence[x].on) {
         currentTrack.updateStepOn(x)
+        //if there are no pitches, update the pitch with the input one
+        if (currentTrack.poly && !currentTrack.sequence[x].pitches.length ||
+          !currentTrack.poly && !currentTrack.sequence[x].pitch) {
+          currentTrack.updateStepPitch(x, y)
+        }
+        //if there are pitches but the input one is a new pitch, update with that pitch
+        else if (currentTrack.poly) {
+          if (currentTrack.instrumentConfig.mapping) {
+            if (!currentTrack.sequence[x].pitches[(15 - y) + currentTrack.sequence[x].octave * 8]) {
+              currentTrack.updateStepPitch(x, y)
+            }
+          } else {
+            const note = getNoteFromY(currentTrack, x, y)
+            if (!currentTrack.sequence[x].pitches.includes(note)) {
+              currentTrack.updateStepPitch(x, y)
+            }
+          }
+        }
+      } else {
+        currentTrack.updateStepPitch(x, y)
       }
-      currentTrack.updateStepPitch(x, y)
     } else if (currentTrack.view === 1) {
       currentTrack.updateStepOctave(x, y)
     } else if (currentTrack.view === 2) {

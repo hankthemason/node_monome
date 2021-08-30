@@ -28,6 +28,7 @@ class Track {
     this.followMode = false
     this.copyBuffer = []
     this.syncedToUniversalNoteValue = false
+    this.noteEffectType = 'repeat'
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
       this.sequence[x] = new Step(false, 0, 0, 0, 0, 0, false, false)
@@ -82,8 +83,8 @@ class Track {
     this.sequence[step].on = !this.sequence[step].on
   }
 
-  updateNoteRepeat = step => {
-    this.sequence[step].noteRepeat = !this.sequence[step].noteRepeat
+  updateNoteEffect = step => {
+    this.sequence[step].noteEffect = !this.sequence[step].noteEffect
   }
 
   updateNumPages = (newNumPages) => {
@@ -128,6 +129,10 @@ class Track {
         this.sequence[x].pitchProb = 15 - (y - 1)
       }
     }
+  }
+
+  updateNoteEffectType = () => {
+    this.noteEffectType = this.noteEffectType === 'repeat' ? 'hold' : 'repeat'
   }
 }
 
@@ -195,7 +200,7 @@ class MonoTrack extends Track {
     }
 
     if (this.sequence[step].on && passNote) {
-      return [randomNote || this.sequence[step].pitch, velocity, msPerNote, this.sequence[step].noteRepeat]
+      return [randomNote || this.sequence[step].pitch, velocity, msPerNote, this.sequence[step].noteEffect]
     } else {
       return [null, null]
     }
@@ -210,7 +215,7 @@ class MappedTrack extends PolyTrack {
     this.pitchViewCoupledToOctave = false
 
     for (let x = 0; x < UNIVERSAL_SEQ_LENGTH; x++) {
-      this.sequence[x] = new PolyStep(false, new Array(this.instrumentConfig.mapping.length), 0, 0, 0, 0, false, false)
+      this.sequence[x] = new PolyStep(false, [], 0, 0, 0, 0, false, false)
     }
   }
 
@@ -221,6 +226,13 @@ class MappedTrack extends PolyTrack {
     //turn note off if already selected
     if (this.sequence[step].pitches.includes(this.instrumentConfig.mapping[noteIdx])) {
       this.sequence[step].pitches[15 - y + yOffset] = null
+      //check if the note's pitches are all null
+      const empty = this.sequence[step].pitches.every(p => p === null)
+      //if they are, turn the step off and reinitialize it to emptyset
+      if (empty) {
+        this.sequence[step].on = false
+        this.sequence[step].pitches = []
+      }
     }
     //otherwise turn note on and make velocity, prob max (8)
     else {
@@ -240,11 +252,11 @@ class MappedTrack extends PolyTrack {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
-    const noteRepeat = this.sequence[step].noteRepeat
+    const noteEffect = this.sequence[step].noteEffect
 
     if (this.sequence[step].on) {
       const notes = this.sequence[step].pitches.filter(pitch => pitch !== null && pitch !== undefined)
-      return [notes, velocity, msPerNote, noteRepeat]
+      return [notes, velocity, msPerNote, noteEffect]
     } else {
       return [null, null]
     }
@@ -286,7 +298,12 @@ class ScalarPolyTrack extends PolyTrack {
       if (stepObj.pitches.includes(note)) {
         let noteIdx = stepObj.pitches.indexOf(note)
         stepObj.pitches.splice(noteIdx, 1)
+        //turn off the step if there are no pitches
+        if (!stepObj.pitches.length) {
+          stepObj.on = false
+        }
       }
+
       //check the input against the instrument's bounds
       else if (note >= this.instrumentConfig.minNote && note <= this.instrumentConfig.maxNote) {
         //always map notes to their scalar index 
@@ -320,7 +337,7 @@ class ScalarPolyTrack extends PolyTrack {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
-    const noteRepeat = this.sequence[step].noteRepeat
+    const noteEffect = this.sequence[step].noteEffect
     //if prob < 8, calculate whether or not the note passes
     const passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
     //use notePasses helper with pitchProb value to determine if we will get a new random pitch
@@ -329,7 +346,7 @@ class ScalarPolyTrack extends PolyTrack {
     const pitches = notesAreRandom ? getRandomNotes(this) : this.sequence[step].pitches.filter(pitch => pitch >= 0)
 
     if (this.sequence[step].on && this.sequence[step].pitches.length) {
-      return [pitches, velocity, msPerNote, noteRepeat]
+      return [pitches, velocity, msPerNote, noteEffect]
     } else {
       return [null, null]
     }

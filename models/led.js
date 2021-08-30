@@ -41,7 +41,7 @@ class Led {
     row[currentTrack.view] = 1
     row[6] = currentTrack.followMode ? 1 : 0
     row[currentTrack.numPages + 11] = 1
-    row[10] = currentTrack.poly && currentTrack.pitchViewCoupledToOctave ? 1 : 0
+    row[10] = currentTrack.row6Selector === 'repeat' ? 1 : 0
     row[11] = currentTrack.syncedToUniversalNoteValue ? 1 : 0
     this.grid[rowIdx] = row
   }
@@ -56,14 +56,14 @@ class Led {
     this.grid[rowIdx] = row
   }
 
-  buildNoteRepeatRow = currentTrack => {
+  buildNoteEffectRow = currentTrack => {
     const rowIdx = 5
     let row = []
     const [pageStart, pageEnd] = calculateLimits(currentTrack)
 
     const seq = currentTrack.sequence
     for (let x = pageStart; x < pageStart + 16; x++) {
-      row[x % 16] = x < pageEnd && seq[x].on && seq[x].noteRepeat ? 1 : 0
+      row[x % 16] = x < pageEnd && seq[x].on && seq[x].noteEffect ? 1 : 0
     }
     this.grid[rowIdx] = row
   }
@@ -274,7 +274,7 @@ class Led {
     this.buildRow0(currentTrack)
     this.buildRow1(currentTrack)
     this.buildLengthSelectorRow(currentTrack)
-    this.buildNoteRepeatRow(currentTrack)
+    this.buildNoteEffectRow(currentTrack)
     this.buildSlideRow(currentTrack)
     this.buildNoteOnRow(currentTrack)
     this.buildViewRows(currentTrack)
@@ -422,7 +422,7 @@ class Led {
   buildColumnTop = (col, x, currentTrack) => {
     col[2] = currentTrack.sequence[x].on ? 1 : 0
     col[1] = currentTrack.sequence[x].slide && currentTrack.sequence[x].on ? 1 : 0
-    col[0] = currentTrack.sequence[x].noteRepeat && currentTrack.sequence[x].on ? 1 : 0
+    col[0] = currentTrack.sequence[x].noteEffect && currentTrack.sequence[x].on ? 1 : 0
     return col
   }
 }

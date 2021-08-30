@@ -120,14 +120,6 @@ const main = async () => {
 
           led.buildGrid(currentTrack)
           grid.refresh(led.grid)
-
-          // tracks.forEach(t => t.syncedToUniversalNoteValue = !t.syncedToUniversalNoteValue)
-          // masterConfig.universalNoteValueOn = !masterConfig.universalNoteValueOn
-          // if (masterConfig.universalNoteValueOn) {
-          //   tracks.forEach(t => t.noteValue = masterConfig.universalNoteValue)
-          // }
-          // led.buildGrid(currentTrack)
-          // grid.refresh(led.grid)
         }
         //this part of the grid is page-agnostic and can use x values
         else if (y < 5) {
@@ -158,17 +150,17 @@ const main = async () => {
       led.grid[1][7] = 0
     }
 
-    const [notes, velocity, msPerNote, noteRepeat] = t.getNotes(step)
+    const [notes, velocity, msPerNote, noteEffect] = t.getNotes(step)
     if (masterConfig.swing && t.isMaster) {
       masterConfig.delayOn = ((tracks[masterConfig.masterTrack].step + 1) % 2) !== 0 ? 0 : 1
     }
     //poly
     if (notes && t.poly) {
-      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteRepeat, masterConfig.delayOn)
+      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteEffect, masterConfig.delayOn)
     }
     //mono
     else if (notes && !notes.poly) {
-      maxApi.outlet('note', track, notes, velocity, msPerNote, noteRepeat, masterConfig.delayOn)
+      maxApi.outlet('note', track, notes, velocity, msPerNote, noteEffect, masterConfig.delayOn)
     }
 
     t.incrementStep()
