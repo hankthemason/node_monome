@@ -41,7 +41,7 @@ class Led {
     row[currentTrack.view] = 1
     row[6] = currentTrack.followMode ? 1 : 0
     row[currentTrack.numPages + 11] = 1
-    row[10] = currentTrack.row6Selector === 'repeat' ? 1 : 0
+    row[10] = currentTrack.noteEffectType === 'repeat' ? 1 : 0
     row[11] = currentTrack.syncedToUniversalNoteValue ? 1 : 0
     this.grid[rowIdx] = row
   }

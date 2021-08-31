@@ -150,17 +150,17 @@ const main = async () => {
       led.grid[1][7] = 0
     }
 
-    const [notes, velocity, msPerNote, noteEffect] = t.getNotes(step)
+    const [notes, velocity, msPerNote, noteEffectType, noteEffect] = t.getNotes(step)
     if (masterConfig.swing && t.isMaster) {
       masterConfig.delayOn = ((tracks[masterConfig.masterTrack].step + 1) % 2) !== 0 ? 0 : 1
     }
     //poly
     if (notes && t.poly) {
-      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteEffect, masterConfig.delayOn)
+      maxApi.outlet('notes', track, notes, velocity, msPerNote, noteEffectType, noteEffect, masterConfig.delayOn)
     }
     //mono
     else if (notes && !notes.poly) {
-      maxApi.outlet('note', track, notes, velocity, msPerNote, noteEffect, masterConfig.delayOn)
+      maxApi.outlet('note', track, notes, velocity, msPerNote, noteEffectType, masterConfig.delayOn)
     }
 
     t.incrementStep()

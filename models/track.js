@@ -189,6 +189,7 @@ class MonoTrack extends Track {
     const ms = this.msPerNote
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
+    const noteEffectType = this.noteEffectType
     //if prob < 8, calculate whether or not the note passes
     let passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
     //use notePasses helper with pitchProb value to determine if we will get a new random pitch
@@ -200,7 +201,7 @@ class MonoTrack extends Track {
     }
 
     if (this.sequence[step].on && passNote) {
-      return [randomNote || this.sequence[step].pitch, velocity, msPerNote, this.sequence[step].noteEffect]
+      return [randomNote || this.sequence[step].pitch, velocity, msPerNote, noteEffectType, this.sequence[step].noteEffect]
     } else {
       return [null, null]
     }
@@ -253,10 +254,11 @@ class MappedTrack extends PolyTrack {
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
     const noteEffect = this.sequence[step].noteEffect
+    const noteEffectType = this.noteEffectType
 
     if (this.sequence[step].on) {
       const notes = this.sequence[step].pitches.filter(pitch => pitch !== null && pitch !== undefined)
-      return [notes, velocity, msPerNote, noteEffect]
+      return [notes, velocity, msPerNote, noteEffectType, noteEffect]
     } else {
       return [null, null]
     }
@@ -338,6 +340,7 @@ class ScalarPolyTrack extends PolyTrack {
     const msPerNote = this.sequence[step].slide ? ms + (ms * .25) : ms - (ms * .25)
     const velocity = this.sequence[step].velocity * SCALAR
     const noteEffect = this.sequence[step].noteEffect
+    const noteEffectType = this.noteEffectType
     //if prob < 8, calculate whether or not the note passes
     const passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
     //use notePasses helper with pitchProb value to determine if we will get a new random pitch
@@ -346,7 +349,7 @@ class ScalarPolyTrack extends PolyTrack {
     const pitches = notesAreRandom ? getRandomNotes(this) : this.sequence[step].pitches.filter(pitch => pitch >= 0)
 
     if (this.sequence[step].on && this.sequence[step].pitches.length) {
-      return [pitches, velocity, msPerNote, noteEffect]
+      return [pitches, velocity, msPerNote, noteEffectType, noteEffect]
     } else {
       return [null, null]
     }
