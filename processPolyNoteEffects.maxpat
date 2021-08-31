@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 7.0, -562.0, 1193.0, 480.0 ],
+		"rect" : [ 146.0, -869.0, 780.0, 480.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -479,7 +479,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 172.5, 144.0, 38.0, 22.0 ],
+					"patching_rect" : [ 172.5, 136.0, 38.0, 22.0 ],
 					"text" : "zl.reg"
 				}
 
@@ -491,7 +491,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "bang", "" ],
-					"patching_rect" : [ 133.5, 144.0, 31.0, 22.0 ],
+					"patching_rect" : [ 133.5, 136.0, 31.0, 22.0 ],
 					"text" : "t b s"
 				}
 

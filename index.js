@@ -160,7 +160,7 @@ const main = async () => {
     }
     //mono
     else if (notes && !notes.poly) {
-      maxApi.outlet('note', track, notes, velocity, msPerNote, noteEffectType, masterConfig.delayOn)
+      maxApi.outlet('note', track, notes, velocity, msPerNote, noteEffectType, noteEffect, masterConfig.delayOn)
     }
 
     t.incrementStep()
