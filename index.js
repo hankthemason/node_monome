@@ -8,6 +8,7 @@ const { MonoTrack, MappedTrack, ScalarPolyTrack } = require('./models/track')
 const MasterConfig = require('./models/masterConfig')
 const Led = require('./models/led')
 const { currentTrackHandler, syncOnHandler } = require('./inputHandlers')
+const { writeSequence, readSequence } = require('./utils/readAndWriteSequence')
 
 const tracks = [
   new MappedTrack(0, 4, er1),
@@ -287,6 +288,42 @@ const main = async () => {
       }
     }, 1000 / 10)
   }
+
+  maxApi.addHandler('writeSeq', path => {
+    writeSequence(path, tracks, masterConfig)
+  })
+
+  maxApi.addHandler('readSeq', path => {
+    let seq = readSequence(path)
+    console.log(seq.masterConfig)
+
+
+    seq.tracks.forEach((track, idx) => {
+      let t = tracks[idx]
+      for (const [key, value] of Object.entries(t)) {
+        if (track[key] !== undefined) {
+          t[key] = track[key]
+        }
+      }
+    })
+
+    for (const [key, value] of Object.entries(seq.masterConfig)) {
+      if (key !== 'tracks') {
+        masterConfig[key] = seq.masterConfig[key]
+      }
+    }
+
+    masterConfig.tracks = tracks
+
+    tracks.forEach(t => t.step = 0)
+    currentTrack = tracks[0]
+    currentTrack.view = 0
+    led.buildGrid(currentTrack)
+    grid.refresh(led.grid)
+
+    tracks.forEach(t => t.updateNoteValue(t.noteValue))
+    maxApi.outlet('readSeq', masterConfig.masterHz, masterConfig.swing, masterConfig.swingAmount)
+  })
 
   initialize()
   run()
