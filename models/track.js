@@ -191,7 +191,7 @@ class MonoTrack extends Track {
     const velocity = this.sequence[step].velocity * SCALAR
     const noteEffectType = this.noteEffectType
     //if prob < 8, calculate whether or not the note passes
-    let passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
+    const passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
     //use notePasses helper with pitchProb value to determine if we will get a new random pitch
     let noteIsRandom = notePasses(this.sequence[step].pitchProb)
     let randomNote = null
@@ -255,8 +255,9 @@ class MappedTrack extends PolyTrack {
     const velocity = this.sequence[step].velocity * SCALAR
     const noteEffect = this.sequence[step].noteEffect
     const noteEffectType = this.noteEffectType
+    const passNote = this.sequence[step].prob < 8 ? notePasses(this.sequence[step].prob) : true
 
-    if (this.sequence[step].on) {
+    if (this.sequence[step].on && passNote) {
       const notes = this.sequence[step].pitches.filter(pitch => pitch !== null && pitch !== undefined)
       return [notes, velocity, msPerNote, noteEffectType, noteEffect]
     } else {
@@ -348,7 +349,7 @@ class ScalarPolyTrack extends PolyTrack {
 
     const pitches = notesAreRandom ? getRandomNotes(this) : this.sequence[step].pitches.filter(pitch => pitch >= 0)
 
-    if (this.sequence[step].on && this.sequence[step].pitches.length) {
+    if (this.sequence[step].on && this.sequence[step].pitches.length && passNote) {
       return [pitches, velocity, msPerNote, noteEffectType, noteEffect]
     } else {
       return [null, null]

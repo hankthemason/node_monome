@@ -1,6 +1,7 @@
 const calculateLimits = require('../utils/calculateLimits')
 const _ = require('lodash')
 const getNoteFromY = require('../utils/getNoteFromY')
+const { prophet12 } = require('../configurations/instrumentConfigs')
 
 const currentTrackHandler = (x, y, currentTrack) => {
   if (y === 0) {
@@ -66,7 +67,7 @@ const currentTrackHandler = (x, y, currentTrack) => {
           !currentTrack.poly && !currentTrack.sequence[x].pitch) {
           currentTrack.updateStepPitch(x, y)
         }
-        //if there are pitches but the input one is a new pitch, update with that pitch
+        //for a polyTrack, if there are pitches but the input one is a new pitch, update with that pitch
         else if (currentTrack.poly) {
           if (currentTrack.instrumentConfig.mapping) {
             if (!currentTrack.sequence[x].pitches[(15 - y) + currentTrack.sequence[x].octave * 8]) {
@@ -78,7 +79,13 @@ const currentTrackHandler = (x, y, currentTrack) => {
               currentTrack.updateStepPitch(x, y)
             }
           }
+        } else if (!currentTrack.poly) {
+          const note = getNoteFromY(currentTrack, x, y)
+          if (note !== currentTrack.sequence[x].pitch) {
+            currentTrack.updateStepPitch(x, y)
+          }
         }
+
       } else {
         currentTrack.updateStepPitch(x, y)
       }
