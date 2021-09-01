@@ -295,8 +295,6 @@ const main = async () => {
 
   maxApi.addHandler('readSeq', path => {
     let seq = readSequence(path)
-    console.log(seq.masterConfig)
-
 
     seq.tracks.forEach((track, idx) => {
       let t = tracks[idx]
